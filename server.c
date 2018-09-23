@@ -2,9 +2,9 @@
  * @Author: nilanjan
  * @Date:   2018-08-21T15:31:20+05:30
  * @Email:  nilanjandaw@gmail.com
- * @Filename: 183059004.c
+ * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-02T17:42:12+05:30
+ * @Last modified time: 2018-09-23T23:53:26+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdio.h>
@@ -34,8 +34,8 @@ int number_to_produce, insert_index = 0, retrieve_index = 0, master_exit = 0;
 int current_queue_element_count = 0;
 int buffer[QUEUE_SIZE];
 
-pthread_cond_t generator, retriever;
-pthread_mutex_t mutex;
+pthread_cond_t generator = PTHREAD_COND_INITIALIZER, retriever = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int insert(int number_to_produce) {
   buffer[insert_index] = number_to_produce;
@@ -121,7 +121,7 @@ void* consume_request(void* id) {
 
 int main(int argc, char *argv[]) {
 
-  int prod_thread_id = 0, t1 = 1, t2 = 2, t3 = 3, t4 = 4;
+  int prod_thread_id = 0;
   pthread_t prod_thread;
   pthread_t consumer_threads[WORKER_THREAD_COUNT];
 
@@ -129,21 +129,11 @@ int main(int argc, char *argv[]) {
 
   //create master thread
   pthread_create(&prod_thread, NULL, generate_requests_loop, (void *)&prod_thread_id);
-
-  //create worker threads
-  // for (int i = 1; i <= WORKER_THREAD_COUNT; i++) {
-  //   printf("Thread #%d spawned\n", i);
-  //   int id = i;
-  //   pthread_create(&consumer_threads[i - 1], NULL, consume_request, (void *)&id);
-  // }
-  printf("Thread #%d spawned\n", t1);
-  pthread_create(&consumer_threads[0], NULL, consume_request, (void *)&t1);
-  printf("Thread #%d spawned\n", t2);
-  pthread_create(&consumer_threads[1], NULL, consume_request, (void *)&t2);
-  printf("Thread #%d spawned\n", t3);
-  pthread_create(&consumer_threads[2], NULL, consume_request, (void *)&t3);
-  printf("Thread #%d spawned\n", t4);
-  pthread_create(&consumer_threads[3], NULL, consume_request, (void *)&t4);
+  for (int i = 1; i <= WORKER_THREAD_COUNT; i++) {
+    printf("Thread #%d spawned\n", i);
+    int id = i;
+    pthread_create(&consumer_threads[i - 1], NULL, consume_request, (void *)&id);
+  }
 
   sleep(1000);
 
