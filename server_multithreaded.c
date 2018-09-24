@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-24T15:58:45+05:30
+ * @Last modified time: 2018-09-24T18:45:27+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdio.h>
@@ -45,6 +45,7 @@ void signal_handler(int signal) {
     for (int i = 0; i < QUEUE_SIZE; i++) {
       if (client_file_descriptor[i] > 0) {
         close(client_file_descriptor[i]);
+        client_file_descriptor[i] = 0;
         printf("Closed active client connection\n");
       }
     }
@@ -77,10 +78,12 @@ int handle_request(int client_connection) {
 
   int n;
   char buffer[BUFFER_LENGTH];
-  bzero(buffer, BUFFER_LENGTH);
-  if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
-    error_handler("unable to read from socket");
-  printf("%s\n", buffer);
+  do {
+    bzero(buffer, BUFFER_LENGTH);
+    if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
+      error_handler("unable to read from socket");
+    printf("%s %d\n", buffer, n);
+  } while(strcmp(buffer, "exit00") != 0);
   close(client_connection);
 }
 
