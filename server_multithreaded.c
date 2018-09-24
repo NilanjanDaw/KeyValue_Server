@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-24T18:45:27+05:30
+ * @Last modified time: 2018-09-24T19:20:59+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdio.h>
@@ -23,9 +23,9 @@
 #define SLEEP_NANOSEC 100
 #define BUFFER_LENGTH 1024
 #define BACKLOG_QUEUE 5
-#ifndef QUEUE_SIZE
-  #define QUEUE_SIZE 1024
-#endif
+#define MAX_NUM_TOKENS 4
+#define QUEUE_SIZE 1024
+
 
 int insert_index = 0, retrieve_index = 0, master_exit = 0;
 int current_queue_element_count = 0;
@@ -74,6 +74,34 @@ int retrieve(int *memory) {
   return 0;
 }
 
+char **tokenize(char *line) {
+  char **tokens = (char **)malloc(MAX_NUM_TOKENS * sizeof(char *));
+  char *token = (char *)malloc(BUFFER_LENGTH * sizeof(char));
+  int i, tokenIndex = 0, tokenNo = 0;
+
+  for(i = 0; i < strlen(line); i++){
+
+    char readChar = line[i];
+
+    if (readChar == ' ' || readChar == '\n' || readChar == '\t') {
+
+      token[tokenIndex] = '\0';
+      if (tokenIndex != 0) {
+
+        tokens[tokenNo] = (char*)malloc(BUFFER_LENGTH*sizeof(char));
+        strcpy(tokens[tokenNo++], token);
+        tokenIndex = 0;
+      }
+    } else {
+      token[tokenIndex++] = readChar;
+    }
+  }
+
+  free(token);
+  tokens[tokenNo] = NULL ;
+  return tokens;
+}
+
 int handle_request(int client_connection) {
 
   int n;
@@ -82,8 +110,8 @@ int handle_request(int client_connection) {
     bzero(buffer, BUFFER_LENGTH);
     if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
       error_handler("unable to read from socket");
-    printf("%s %d\n", buffer, n);
-  } while(strcmp(buffer, "exit00") != 0);
+    printf("string %s read %d buffer_len %ld\n", buffer, n, strlen(buffer));
+  } while(strcmp(buffer, "exit00") != 0 && n != 0);
   close(client_connection);
 }
 

@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-24T18:45:42+05:30
+ * @Last modified time: 2018-09-24T19:10:09+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -74,7 +74,7 @@ char **tokenize(char *line) {
   char *token = (char *)malloc(BUFFER_LENGTH * sizeof(char));
   int i, tokenIndex = 0, tokenNo = 0;
 
-  for(i =0; i < strlen(line); i++){
+  for(i = 0; i < strlen(line); i++){
 
     char readChar = line[i];
 
