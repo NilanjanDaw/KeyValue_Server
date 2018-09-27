@@ -26,6 +26,28 @@ void error_handler(char *msg) {
   exit(1);
 }
 
+long int read_input(char **memory) {
+  long int i = 0, buffer_multiple = 2;
+  long int current_buffer_size = BUFFER_LENGTH;
+  char c, *buffer;
+  buffer = (char *)malloc(current_buffer_size * sizeof(char));
+  bzero(buffer, current_buffer_size);
+  while ((c = getchar()) != '\n') {
+    buffer[i] = c;
+    i++;
+    if (i >= current_buffer_size - 3) {
+      buffer = (char *)realloc(buffer, BUFFER_LENGTH * buffer_multiple * sizeof(char));
+      current_buffer_size = BUFFER_LENGTH * buffer_multiple;
+
+      buffer_multiple++;
+    }
+  }
+  buffer[i++] = ' ';
+  memset(buffer + i, '\0', (current_buffer_size - i) * sizeof(char));
+  *memory = buffer;
+  return current_buffer_size;
+}
+
 int connect_server(char *address, char* port_address) {
   struct sockaddr_in server_address;
   port = atoi(port_address);
@@ -64,8 +86,8 @@ int disconnect_server() {
   }
 }
 
-void write_server(char *buffer) {
-  if (write(socket_file_descriptor, buffer, BUFFER_LENGTH) < 0)
+void write_server(char *buffer,long int buffer_len) {
+  if (write(socket_file_descriptor, buffer, buffer_len) < 0)
     error_handler("unable to write to socket");
 }
 
@@ -98,10 +120,12 @@ char **tokenize(char *line) {
 }
 
 void start_interactive() {
-  char buffer[BUFFER_LENGTH];
   while (1) {
-    bzero(buffer, BUFFER_LENGTH);
-    fgets(buffer, BUFFER_LENGTH, stdin);
+    char *buffer;
+    long int buffer_len;
+    buffer_len = read_input(&buffer);
+    printf("%ld %s\n",strlen(buffer), buffer);
+    printf("%ld\n", buffer_len);
     char **token = tokenize(buffer);
     printf("%s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]));
     if (strcmp(&(*token[0]), "connect") == 0) {
@@ -109,8 +133,9 @@ void start_interactive() {
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
-      write_server(buffer);
+      write_server(buffer, strlen(buffer));
     }
+    free(buffer);
   }
 }
 
@@ -121,7 +146,7 @@ void start_batch(const char *path) {
 int main(int argc, char const *argv[]) {
 
   if (argc < 2) {
-    printf("Usage: ./executable interactive/batch [path_to_batch_file]\n");
+    printf("Error mode required\nUsage: ./executable interactive/batch [path_to_batch_file]\n");
     exit(0);
   }
 
