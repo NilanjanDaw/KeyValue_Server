@@ -16,7 +16,7 @@
 #include <string.h>
 
 #define BUFFER_LENGTH 1024
-#define MAX_NUM_TOKENS 4
+#define MAX_NUM_TOKENS 3
 
 
 int socket_file_descriptor = 0, port, n;
@@ -86,26 +86,25 @@ int disconnect_server() {
   }
 }
 
-void write_server(char *buffer,long int buffer_len) {
-  if (write(socket_file_descriptor, buffer, buffer_len) < 0)
+void write_server(char *buffer) {
+  if (write(socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
 }
 
-char **tokenize(char *line) {
-  char **tokens = (char **)malloc(MAX_NUM_TOKENS * sizeof(char *));
-  char *token = (char *)malloc(BUFFER_LENGTH * sizeof(char));
+char **tokenize(char *line, long int buffer_length) {
+  char **tokens = (char **)malloc((MAX_NUM_TOKENS + 1) * sizeof(char *));
+  char *token = (char *)malloc(buffer_length * sizeof(char));
   int i, tokenIndex = 0, tokenNo = 0;
 
   for(i = 0; i < strlen(line); i++){
 
     char readChar = line[i];
 
-    if (readChar == ' ' || readChar == '\n' || readChar == '\t') {
-
+    if ((tokenNo < MAX_NUM_TOKENS - 1) && (readChar == ' ' || readChar == '\n' || readChar == '\t')) {
       token[tokenIndex] = '\0';
       if (tokenIndex != 0) {
 
-        tokens[tokenNo] = (char*)malloc(BUFFER_LENGTH*sizeof(char));
+        tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
         strcpy(tokens[tokenNo++], token);
         tokenIndex = 0;
       }
@@ -113,6 +112,8 @@ char **tokenize(char *line) {
       token[tokenIndex++] = readChar;
     }
   }
+  tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
+  strcpy(tokens[tokenNo++], token);
 
   free(token);
   tokens[tokenNo] = NULL ;
@@ -126,21 +127,25 @@ void start_interactive() {
     buffer_len = read_input(&buffer);
     printf("%ld %s\n",strlen(buffer), buffer);
     printf("%ld\n", buffer_len);
-    char **token = tokenize(buffer);
+    char **token = tokenize(buffer, buffer_len);
     printf("%s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]));
     if (strcmp(&(*token[0]), "connect") == 0) {
       connect_server(&(*token[1]), &(*token[2]));
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
-      write_server(buffer, strlen(buffer));
+      write_server(token[2]);
     }
+    for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
+      free(token[i]);
+    }
+    free(token);
     free(buffer);
   }
 }
 
 void start_batch(const char *path) {
-  char buffer[BUFFER_LENGTH];
+  // char buffer[BUFFER_LENGTH];
 }
 
 int main(int argc, char const *argv[]) {
