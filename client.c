@@ -16,7 +16,7 @@
 #include <string.h>
 
 #define BUFFER_LENGTH 1024
-#define MAX_NUM_TOKENS 3
+#define MAX_NUM_TOKENS 4
 
 
 int socket_file_descriptor = 0, port, n;
@@ -89,6 +89,7 @@ int disconnect_server() {
 void write_server(char *buffer) {
   if (write(socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
+  printf("done\n");
 }
 
 char **tokenize(char *line, long int buffer_length) {
@@ -134,7 +135,7 @@ void start_interactive() {
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
-      write_server(token[2]);
+      write_server(buffer);
     }
     for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
       free(token[i]);

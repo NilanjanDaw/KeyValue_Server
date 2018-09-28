@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #define SLEEP_NANOSEC 100
 #define BUFFER_LENGTH 1024
@@ -31,6 +32,8 @@ int insert_index = 0, retrieve_index = 0, master_exit = 0;
 int current_queue_element_count = 0;
 int client_file_descriptor[QUEUE_SIZE] = {0};
 int socket_file_descriptor, port;
+char **hashtable;
+long int table_size;
 
 pthread_cond_t generator = PTHREAD_COND_INITIALIZER, retriever = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -53,6 +56,7 @@ void signal_handler(int signal) {
       printf("Closed server socket\n");
       close(socket_file_descriptor);
     }
+    free(hashtable);
   }
   exit(EXIT_SUCCESS);
 }
@@ -74,21 +78,25 @@ int retrieve(int *memory) {
   return 0;
 }
 
-char **tokenize(char *line) {
-  char **tokens = (char **)malloc(MAX_NUM_TOKENS * sizeof(char *));
-  char *token = (char *)malloc(BUFFER_LENGTH * sizeof(char));
+int create(int key, char *buffer) {
+  printf("%s\n", buffer);
+  hashtable[key] = buffer;
+}
+
+char **tokenize(char *line, long int buffer_length) {
+  char **tokens = (char **)malloc((MAX_NUM_TOKENS + 1) * sizeof(char *));
+  char *token = (char *)malloc(buffer_length * sizeof(char));
   int i, tokenIndex = 0, tokenNo = 0;
 
   for(i = 0; i < strlen(line); i++){
 
     char readChar = line[i];
 
-    if (readChar == ' ' || readChar == '\n' || readChar == '\t') {
-
+    if ((tokenNo < MAX_NUM_TOKENS - 1) && (readChar == ' ' || readChar == '\n' || readChar == '\t')) {
       token[tokenIndex] = '\0';
       if (tokenIndex != 0) {
 
-        tokens[tokenNo] = (char*)malloc(BUFFER_LENGTH*sizeof(char));
+        tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
         strcpy(tokens[tokenNo++], token);
         tokenIndex = 0;
       }
@@ -96,6 +104,8 @@ char **tokenize(char *line) {
       token[tokenIndex++] = readChar;
     }
   }
+  tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
+  strcpy(tokens[tokenNo++], token);
 
   free(token);
   tokens[tokenNo] = NULL ;
@@ -105,12 +115,28 @@ char **tokenize(char *line) {
 int handle_request(int client_connection) {
 
   int n;
-  char buffer[BUFFER_LENGTH];
+  char *buffer;
   do {
+    buffer = (char *) malloc(BUFFER_LENGTH * sizeof(char));
     bzero(buffer, BUFFER_LENGTH);
-    if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
+    if((n = read(client_connection, buffer, BUFFER_LENGTH)) <= 0)
       error_handler("unable to read from socket");
-    printf("string %s read %d buffer_len %ld\n", buffer, n, strlen(buffer));
+    char **token = tokenize(buffer, strlen(buffer));
+    printf("command %s buffer %s buffer_len %ld\n", token[0], token[3], strlen(token[3]));
+    if (strcmp(token[0], "create") == 0) {
+      long int buffer_len = strtol(token[2], NULL, 10);
+      printf("asdasd\n");
+      buffer = (char *)realloc(buffer, buffer_len * sizeof(char));
+      printf("asdasd\n");
+      strcpy(buffer, token[3]);
+      printf("asdasd\n");
+      int key = atoi(token[1]);
+      printf("asdasd\n");
+      create(key, buffer);
+      printf("asdasd\n");
+      printf("%s\n", hashtable[key]);
+    }
+    free(buffer);
   } while(strcmp(buffer, "exit00") != 0 && n != 0);
   close(client_connection);
 }
@@ -161,7 +187,6 @@ void *master(void *data) {
 // read request from queue
 void* service_request(void* id) {
   int thread_id = *((int *)id);
-
   while (1) {
     pthread_mutex_lock(&mutex);
     while (current_queue_element_count <= 0) {
@@ -185,6 +210,9 @@ int main(int argc, char *argv[]) {
         "%d processors available.\n",
         get_nprocs_conf(), get_nprocs());
   worker_thread_count = 2 * get_nprocs();
+  table_size = (long int)pow(2, sizeof(int) * 8);
+  hashtable = malloc(table_size * sizeof(char *));
+
   pthread_t prod_thread;
   pthread_t *consumer_threads;
 
