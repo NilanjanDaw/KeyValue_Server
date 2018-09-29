@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #define SLEEP_NANOSEC 100
 #define BUFFER_LENGTH 1024
@@ -44,7 +45,7 @@ void error_handler(char *error_msg) {
 }
 
 void signal_handler(int signal) {
-  if (signal == SIGINT) {
+  if (signal == SIGINT || signal == SIGTERM) {
     for (int i = 0; i < QUEUE_SIZE; i++) {
       if (client_file_descriptor[i] > 0) {
         close(client_file_descriptor[i]);
@@ -79,26 +80,31 @@ int retrieve(int *memory) {
 }
 
 int create(int key, char *buffer) {
-  printf("%s\n", buffer);
-  hashtable[key] = buffer;
+  hashtable[key] = (char *) malloc(strlen(buffer) * sizeof(char));
+  bzero(hashtable[key], strlen(buffer));
+  strcpy(hashtable[key], buffer);
+  return 0;
 }
 
 char **tokenize(char *line, long int buffer_length) {
+
   char **tokens = (char **)malloc((MAX_NUM_TOKENS + 1) * sizeof(char *));
   char *token = (char *)malloc(buffer_length * sizeof(char));
+  bzero(token, buffer_length);
   int i, tokenIndex = 0, tokenNo = 0;
 
   for(i = 0; i < strlen(line); i++){
 
     char readChar = line[i];
-
     if ((tokenNo < MAX_NUM_TOKENS - 1) && (readChar == ' ' || readChar == '\n' || readChar == '\t')) {
       token[tokenIndex] = '\0';
       if (tokenIndex != 0) {
 
         tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
+        bzero(tokens[tokenNo], buffer_length);
         strcpy(tokens[tokenNo++], token);
         tokenIndex = 0;
+        bzero(token, buffer_length);
       }
     } else {
       token[tokenIndex++] = readChar;
@@ -108,7 +114,7 @@ char **tokenize(char *line, long int buffer_length) {
   strcpy(tokens[tokenNo++], token);
 
   free(token);
-  tokens[tokenNo] = NULL ;
+  tokens[tokenNo] = NULL;
   return tokens;
 }
 
@@ -119,22 +125,18 @@ int handle_request(int client_connection) {
   do {
     buffer = (char *) malloc(BUFFER_LENGTH * sizeof(char));
     bzero(buffer, BUFFER_LENGTH);
-    if((n = read(client_connection, buffer, BUFFER_LENGTH)) <= 0)
+    if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
       error_handler("unable to read from socket");
-    char **token = tokenize(buffer, strlen(buffer));
-    printf("command %s buffer %s buffer_len %ld\n", token[0], token[3], strlen(token[3]));
-    if (strcmp(token[0], "create") == 0) {
-      long int buffer_len = strtol(token[2], NULL, 10);
-      printf("asdasd\n");
-      buffer = (char *)realloc(buffer, buffer_len * sizeof(char));
-      printf("asdasd\n");
-      strcpy(buffer, token[3]);
-      printf("asdasd\n");
-      int key = atoi(token[1]);
-      printf("asdasd\n");
-      create(key, buffer);
-      printf("asdasd\n");
-      printf("%s\n", hashtable[key]);
+    else if (n > 0) {
+      char **token = tokenize(buffer, strlen(buffer));
+      printf("command %s buffer %s buffer_len %ld\n", token[0], token[3], strlen(token[3]));
+      if (strcmp(token[0], "create") == 0) {
+        long int buffer_len = strtol(token[2], NULL, 10);
+        buffer = (char *)realloc(buffer, buffer_len * sizeof(char));
+        strcpy(buffer, token[3]);
+        int key = atoi(token[1]);
+        create(key, buffer);
+      }
     }
     free(buffer);
   } while(strcmp(buffer, "exit00") != 0 && n != 0);
@@ -210,13 +212,14 @@ int main(int argc, char *argv[]) {
         "%d processors available.\n",
         get_nprocs_conf(), get_nprocs());
   worker_thread_count = 2 * get_nprocs();
-  table_size = (long int)pow(2, sizeof(int) * 8);
-  hashtable = malloc(table_size * sizeof(char *));
-
+  size_t hashtable_size = 2 * (size_t)INT_MAX + 1;
+  printf("%ld\n", hashtable_size * sizeof(char *));
+  hashtable = (char **)malloc(BUFFER_LENGTH * sizeof(char *));
   pthread_t prod_thread;
   pthread_t *consumer_threads;
 
   signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
   if (argc < 2)
     error_handler("Port number must be provided");
   port = atoi(argv[1]);
