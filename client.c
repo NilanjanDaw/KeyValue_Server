@@ -26,13 +26,14 @@ void error_handler(char *msg) {
   exit(1);
 }
 
-long int read_input(char **memory) {
+long int read_input(char **memory, FILE* file) {
   long int i = 0, buffer_multiple = 2;
   long int current_buffer_size = BUFFER_LENGTH;
   char c, *buffer;
+
   buffer = (char *)malloc(current_buffer_size * sizeof(char));
   bzero(buffer, current_buffer_size);
-  while ((c = getchar()) != '\n') {
+  while ((c = getc(file)) != '\n') {
     buffer[i] = c;
     i++;
     if (i >= current_buffer_size - 3) {
@@ -133,11 +134,9 @@ void start_interactive() {
   while (1) {
     char *buffer;
     long int buffer_len;
-    buffer_len = read_input(&buffer);
-    printf("%ld %s\n",strlen(buffer), buffer);
-    printf("%ld\n", buffer_len);
+    buffer_len = read_input(&buffer, stdin);
     char **token = tokenize(buffer, buffer_len);
-    printf("%s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]));
+    printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
     if (strcmp(&(*token[0]), "connect") == 0) {
       connect_server(&(*token[1]), &(*token[2]));
     } else if (strcmp(token[0], "disconnect") == 0) {
@@ -154,7 +153,29 @@ void start_interactive() {
 }
 
 void start_batch(const char *path) {
-  // char buffer[BUFFER_LENGTH];
+  
+  FILE *file = fopen(path, "r");
+  while (!feof(file)) {
+    char *buffer;
+    long int buffer_len;
+    buffer_len = read_input(&buffer, file);
+    char **token = tokenize(buffer, buffer_len);
+    printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
+    if (strcmp(&(*token[0]), "connect") == 0) {
+      connect_server(&(*token[1]), &(*token[2]));
+    } else if (strcmp(token[0], "disconnect") == 0) {
+      disconnect_server();
+    } else {
+      write_server(buffer);
+    }
+    for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
+      free(token[i]);
+    }
+    free(token);
+    free(buffer);
+    printf("feof %d\n", feof(file));
+  }
+  fclose(file);
 }
 
 int main(int argc, char const *argv[]) {

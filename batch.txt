@@ -1,0 +1,9 @@
+connect 127.0.0.1 8080
+create 12 3 abc
+read 12
+create 20 10 abc def gh
+read 20
+update 20 3 abc
+delete 20
+read 20
+disconnect

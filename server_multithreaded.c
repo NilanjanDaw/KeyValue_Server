@@ -189,7 +189,7 @@ int handle_request(int client_connection) {
         }
         else {
           delete(key);
-          printf("Ok");
+          printf("Ok\n");
           write_client(client_connection, "Ok\n");
         }
 
@@ -201,7 +201,7 @@ int handle_request(int client_connection) {
           write_client(client_connection, "Error no such entry\n");
         } else {
           update(key, token[3]);
-          printf("Ok");
+          printf("Ok\n");
           write_client(client_connection, "Ok\n");
         }
       }
