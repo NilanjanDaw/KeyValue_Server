@@ -62,6 +62,12 @@ void signal_handler(int signal) {
   exit(EXIT_SUCCESS);
 }
 
+void write_client(int client_connection, char *buffer) {
+
+  if (write(client_connection, buffer, strlen(buffer)) < 0)
+    error_handler("unable to write to socket");
+  printf("done\n");
+}
 
 int insert(int new_client) {
   client_file_descriptor[insert_index] = new_client;
@@ -155,26 +161,36 @@ int handle_request(int client_connection) {
         strcpy(buffer, token[3]);
         int key = atoi(token[1]);
 
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
           create(key, buffer);
-        else
+          write_client(client_connection, "Ok\n");
+        } else {
           printf("Error entry exists\n");
+          write_client(client_connection, "Error entry exists\n");
+        }
       } else if (strcmp(token[0], "read") == 0) {
 
         int key = atoi(token[1]);
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
           printf("No entry\n");
-        else
-          printf("%s\n", hashtable[key]);
+          write_client(client_connection, "Error no such entry\n");
+        }
+        else {
+            printf("%s\n", hashtable[key]);
+            write_client(client_connection, hashtable[key]);
+        }
 
       } else if (strcmp(token[0], "delete") == 0) {
 
         int key = atoi(token[1]);
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
           printf("No entry\n");
+          write_client(client_connection, "Error no such entry\n");
+        }
         else {
           delete(key);
           printf("Ok");
+          write_client(client_connection, "Ok\n");
         }
 
       } else if (strcmp(token[0], "update") == 0) {
@@ -182,10 +198,11 @@ int handle_request(int client_connection) {
         int key = atoi(token[1]);
         if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
           printf("No entry\n");
-        }
-        else {
+          write_client(client_connection, "Error no such entry\n");
+        } else {
           update(key, token[3]);
           printf("Ok");
+          write_client(client_connection, "Ok\n");
         }
       }
     }

@@ -87,8 +87,16 @@ int disconnect_server() {
 }
 
 void write_server(char *buffer) {
+
+  char *read_reply = malloc(BUFFER_LENGTH * sizeof(char));
+  bzero(read_reply, BUFFER_LENGTH);
   if (write(socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
+  if((n = read(socket_file_descriptor, read_reply, BUFFER_LENGTH)) < 0)
+    error_handler("unable to read from socket");
+  else if (n > 0) {
+    printf("%s\n", read_reply);
+  }
   printf("done\n");
 }
 
