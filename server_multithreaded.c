@@ -86,6 +86,21 @@ int create(int key, char *buffer) {
   return 0;
 }
 
+int delete(int key) {
+  free(hashtable[key]);
+  hashtable[key] = NULL;
+  return 0;
+}
+
+int update(int key, char *buffer) {
+  free(hashtable[key]);
+  hashtable[key] = NULL;
+  hashtable[key] = (char *) malloc(strlen(buffer) * sizeof(char));
+  bzero(hashtable[key], strlen(buffer));
+  strcpy(hashtable[key], buffer);
+  return 0;
+}
+
 char **tokenize(char *line, long int buffer_length) {
 
   char **tokens = (char **)malloc((MAX_NUM_TOKENS + 1) * sizeof(char *));
@@ -123,19 +138,55 @@ int handle_request(int client_connection) {
   int n;
   char *buffer;
   do {
+
     buffer = (char *) malloc(BUFFER_LENGTH * sizeof(char));
     bzero(buffer, BUFFER_LENGTH);
+
     if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
       error_handler("unable to read from socket");
     else if (n > 0) {
+
       char **token = tokenize(buffer, strlen(buffer));
-      printf("command %s buffer %s buffer_len %ld\n", token[0], token[3], strlen(token[3]));
+      printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
       if (strcmp(token[0], "create") == 0) {
+
         long int buffer_len = strtol(token[2], NULL, 10);
         buffer = (char *)realloc(buffer, buffer_len * sizeof(char));
         strcpy(buffer, token[3]);
         int key = atoi(token[1]);
-        create(key, buffer);
+
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+          create(key, buffer);
+        else
+          printf("Error entry exists\n");
+      } else if (strcmp(token[0], "read") == 0) {
+
+        int key = atoi(token[1]);
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+          printf("No entry\n");
+        else
+          printf("%s\n", hashtable[key]);
+
+      } else if (strcmp(token[0], "delete") == 0) {
+
+        int key = atoi(token[1]);
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0)
+          printf("No entry\n");
+        else {
+          delete(key);
+          printf("Ok");
+        }
+
+      } else if (strcmp(token[0], "update") == 0) {
+
+        int key = atoi(token[1]);
+        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+          printf("No entry\n");
+        }
+        else {
+          update(key, token[3]);
+          printf("Ok");
+        }
       }
     }
     free(buffer);
