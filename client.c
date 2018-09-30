@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-24T19:10:09+05:30
+ * @Last modified time: 2018-09-30T18:46:10+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -26,7 +26,7 @@ void error_handler(char *msg) {
   exit(1);
 }
 
-long int read_input(char **memory, FILE* file) {
+long int read_input(char **memory, FILE* file, int *status) {
   long int i = 0, buffer_multiple = 2;
   long int current_buffer_size = BUFFER_LENGTH;
   char c, *buffer;
@@ -41,6 +41,10 @@ long int read_input(char **memory, FILE* file) {
       current_buffer_size = BUFFER_LENGTH * buffer_multiple;
 
       buffer_multiple++;
+    }
+    if (feof(file) && status != NULL) {
+      *status = 1;
+      break;
     }
   }
   buffer[i++] = ' ';
@@ -134,7 +138,7 @@ void start_interactive() {
   while (1) {
     char *buffer;
     long int buffer_len;
-    buffer_len = read_input(&buffer, stdin);
+    buffer_len = read_input(&buffer, stdin, NULL);
     char **token = tokenize(buffer, buffer_len);
     printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
     if (strcmp(&(*token[0]), "connect") == 0) {
@@ -153,12 +157,17 @@ void start_interactive() {
 }
 
 void start_batch(const char *path) {
-  
+
   FILE *file = fopen(path, "r");
   while (!feof(file)) {
     char *buffer;
     long int buffer_len;
-    buffer_len = read_input(&buffer, file);
+    int status = 0;
+    buffer_len = read_input(&buffer, file, &status);
+    printf("%d\n", feof(file));
+    if (status) {
+      break;
+    }
     char **token = tokenize(buffer, buffer_len);
     printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
     if (strcmp(&(*token[0]), "connect") == 0) {
