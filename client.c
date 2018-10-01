@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-30T18:46:10+05:30
+ * @Last modified time: 2018-10-02T01:38:30+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -47,7 +47,7 @@ long int read_input(char **memory, FILE* file, int *status) {
       break;
     }
   }
-  buffer[i++] = ' ';
+  // buffer[i++] = ' ';
   memset(buffer + i, '\0', (current_buffer_size - i) * sizeof(char));
   *memory = buffer;
   return current_buffer_size;
@@ -78,8 +78,19 @@ int connect_server(char *address, char* port_address) {
   return socket_file_descriptor;
 }
 
+int send_header(int length) {
+  char header[11];
+  int current_read = 0;
+  sprintf(header, "%10d", length);
+  if ((current_read = write(socket_file_descriptor, header, 11)) < 0) {
+    error_handler("unable to read from socket");
+  }
+  return 0;
+}
+
 int disconnect_server() {
   if (socket_file_descriptor > 0) {
+    send_header(strlen("exit00"));
     write(socket_file_descriptor, "exit00", 6);
     close(socket_file_descriptor);
     socket_file_descriptor = 0;
@@ -93,15 +104,28 @@ int disconnect_server() {
 
 void write_server(char *buffer) {
 
-  char *read_reply = malloc(BUFFER_LENGTH * sizeof(char));
-  bzero(read_reply, BUFFER_LENGTH);
+  int response_read = 0;
+  char *read_reply;
+  send_header(strlen(buffer));
   if (write(socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
-  if((n = read(socket_file_descriptor, read_reply, BUFFER_LENGTH)) < 0)
+  char header[11];
+
+  if ((response_read = read(socket_file_descriptor, header, 11)) < 0) {
     error_handler("unable to read from socket");
-  else if (n > 0) {
+  }
+  int packet_length = atoi(header);
+  printf("%d\n", packet_length);
+  read_reply = (char *) malloc(packet_length * sizeof(char));
+  bzero(read_reply, packet_length);
+
+  if((response_read = read(socket_file_descriptor, read_reply, packet_length)) < 0)
+    error_handler("unable to read from socket");
+  else if (response_read > 0) {
     printf("%s\n", read_reply);
   }
+  free(read_reply);
+  read_reply = NULL;
   printf("done\n");
 }
 
@@ -121,6 +145,7 @@ char **tokenize(char *line, long int buffer_length) {
         tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
         strcpy(tokens[tokenNo++], token);
         tokenIndex = 0;
+        bzero(token, buffer_length);
       }
     } else {
       token[tokenIndex++] = readChar;
@@ -150,9 +175,12 @@ void start_interactive() {
     }
     for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
       free(token[i]);
+      token[i] = NULL;
     }
     free(token);
+    token = NULL;
     free(buffer);
+    buffer = NULL;
   }
 }
 
@@ -164,7 +192,6 @@ void start_batch(const char *path) {
     long int buffer_len;
     int status = 0;
     buffer_len = read_input(&buffer, file, &status);
-    printf("%d\n", feof(file));
     if (status) {
       break;
     }
@@ -179,10 +206,12 @@ void start_batch(const char *path) {
     }
     for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
       free(token[i]);
+      token[i] = NULL;
     }
     free(token);
+    token = NULL;
     free(buffer);
-    printf("feof %d\n", feof(file));
+    buffer = NULL;
   }
   fclose(file);
 }

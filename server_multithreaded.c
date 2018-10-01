@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-09-24T19:20:59+05:30
+ * @Last modified time: 2018-10-02T01:41:34+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdio.h>
@@ -62,8 +62,18 @@ void signal_handler(int signal) {
   exit(EXIT_SUCCESS);
 }
 
-void write_client(int client_connection, char *buffer) {
+int send_header(int length, int client_connection) {
+  char header[11];
+  int current_read = 0;
+  sprintf(header, "%10d", length);
+  if (write(client_connection, header, 11) < 0) {
+    error_handler("unable to read from socket");
+  }
+  return 0;
+}
 
+void write_client(int client_connection, char *buffer) {
+  send_header(strlen(buffer), client_connection);
   if (write(client_connection, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
   printf("done\n");
@@ -139,76 +149,105 @@ char **tokenize(char *line, long int buffer_length) {
   return tokens;
 }
 
+char** read_client(int client_connection, int *n) {
+  *n = 0;
+  int current_read = 0;
+  char *buffer = NULL;
+  char header[11];
+
+  if ((current_read = read(client_connection, header, 11)) < 0) {
+    error_handler("unable to read from socket");
+  }
+  int packet_length = atoi(header);
+  printf("%d\n", packet_length);
+  buffer = (char *) malloc(packet_length * sizeof(char));
+  bzero(buffer, packet_length);
+
+  if ((current_read = read(client_connection, buffer, packet_length)) < 0) {
+    error_handler("unable to read from socket");
+  }
+  char **token = tokenize(buffer, strlen(buffer));
+  return token;
+}
+
+void free_token(char **token) {
+  for (size_t i = 0; i < 4; i++) {
+    if (token[i] != NULL) {
+      free(token[i]);
+      token[i] = NULL;
+    }
+  }
+  if (token != NULL) {
+    free(token);
+    token = NULL;
+  }
+}
+
 int handle_request(int client_connection) {
 
   int n;
-  char *buffer;
-  do {
+  while (1) {
 
-    buffer = (char *) malloc(BUFFER_LENGTH * sizeof(char));
-    bzero(buffer, BUFFER_LENGTH);
+    char **token = read_client(client_connection, &n);
+    printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
+    printf("%d %d\n", strcmp(token[0], "create"), strcmp(token[0], "read"));
+    if (strcmp(token[0], "exit00") == 0) {
+      free_token(token);
+      close(client_connection);
+      break;
 
-    if((n = read(client_connection, buffer, BUFFER_LENGTH)) < 0)
-      error_handler("unable to read from socket");
-    else if (n > 0) {
+    } else if (strcmp(token[0], "create") == 0) {
+      printf("create\n");
+      long int buffer_len = strtol(token[2], NULL, 10);
+      int key = atoi(token[1]);
+      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+        create(key, token[3]);
+        printf("created entry with length %ld\n", strlen(token[3]));
+        write_client(client_connection, "Ok\n");
+      } else {
+        printf("Error entry exists\n");
+        write_client(client_connection, "Error entry exists\n");
+      }
+    } else if (strcmp(token[0], "read") == 0) {
 
-      char **token = tokenize(buffer, strlen(buffer));
-      printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
-      if (strcmp(token[0], "create") == 0) {
+      int key = atoi(token[1]);
+      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+        printf("No entry\n");
+        write_client(client_connection, "Error no such entry\n");
+      }
+      else {
+          printf("%s\n", hashtable[key]);
+          write_client(client_connection, hashtable[key]);
+      }
 
-        long int buffer_len = strtol(token[2], NULL, 10);
-        buffer = (char *)realloc(buffer, buffer_len * sizeof(char));
-        strcpy(buffer, token[3]);
-        int key = atoi(token[1]);
+    } else if (strcmp(token[0], "delete") == 0) {
 
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-          create(key, buffer);
-          write_client(client_connection, "Ok\n");
-        } else {
-          printf("Error entry exists\n");
-          write_client(client_connection, "Error entry exists\n");
-        }
-      } else if (strcmp(token[0], "read") == 0) {
+      int key = atoi(token[1]);
+      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+        printf("No entry\n");
+        write_client(client_connection, "Error no such entry\n");
+      }
+      else {
+        delete(key);
+        printf("Ok\n");
+        write_client(client_connection, "Ok\n");
+      }
 
-        int key = atoi(token[1]);
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-          printf("No entry\n");
-          write_client(client_connection, "Error no such entry\n");
-        }
-        else {
-            printf("%s\n", hashtable[key]);
-            write_client(client_connection, hashtable[key]);
-        }
+    } else if (strcmp(token[0], "update") == 0) {
 
-      } else if (strcmp(token[0], "delete") == 0) {
-
-        int key = atoi(token[1]);
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-          printf("No entry\n");
-          write_client(client_connection, "Error no such entry\n");
-        }
-        else {
-          delete(key);
-          printf("Ok\n");
-          write_client(client_connection, "Ok\n");
-        }
-
-      } else if (strcmp(token[0], "update") == 0) {
-
-        int key = atoi(token[1]);
-        if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-          printf("No entry\n");
-          write_client(client_connection, "Error no such entry\n");
-        } else {
-          update(key, token[3]);
-          printf("Ok\n");
-          write_client(client_connection, "Ok\n");
-        }
+      int key = atoi(token[1]);
+      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+        printf("No entry\n");
+        write_client(client_connection, "Error no such entry\n");
+      } else {
+        update(key, token[3]);
+        printf("Ok\n");
+        write_client(client_connection, "Ok\n");
       }
     }
-    free(buffer);
-  } while(strcmp(buffer, "exit00") != 0 && n != 0);
-  close(client_connection);
+
+    free_token(token);
+  }
 }
 
 //add request to queue
@@ -281,7 +320,6 @@ int main(int argc, char *argv[]) {
         get_nprocs_conf(), get_nprocs());
   worker_thread_count = 2 * get_nprocs();
   size_t hashtable_size = 2 * (size_t)INT_MAX + 1;
-  printf("%ld\n", hashtable_size * sizeof(char *));
   hashtable = (char **)malloc(BUFFER_LENGTH * sizeof(char *));
   pthread_t prod_thread;
   pthread_t *consumer_threads;
