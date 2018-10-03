@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-03T01:19:33+05:30
+ * @Last modified time: 2018-10-04T00:40:38+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -114,7 +114,7 @@ void write_server(char *buffer) {
   if ((response_read = read(socket_file_descriptor, header, 11)) < 0) {
     error_handler("unable to read from socket");
   }
-  int packet_length = atoi(header);
+  int packet_length = atoi(header) + 1;
   printf("%d\n", packet_length);
   read_reply = (char *) malloc(packet_length * sizeof(char));
   bzero(read_reply, packet_length);
