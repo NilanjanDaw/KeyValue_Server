@@ -121,7 +121,13 @@ int create(int key, char *value) {
 }
 
 char* read(int key) {
-  return hashtable[key];
+  char* value = NULL;
+  if (hashtable[key] != NULL) {
+    value = (char*) malloc((strlen(hashtable[key]) + 1) * sizeof(char));
+    bzero(value, (strlen(hashtable[key]) + 1));
+    strcpy(value, hashtable[key]);
+  }
+  return value;
 }
 
 int delete_key(int key) {
@@ -191,7 +197,7 @@ char** read_client(int client_connection, int *n) {
     return NULL;
   }
 
-  int packet_length = atoi(header);
+  int packet_length = atoi(header) + 1;
   printf("%d\n", packet_length);
   buffer = (char *) malloc(packet_length * sizeof(char));
   bzero(buffer, packet_length);
@@ -199,6 +205,7 @@ char** read_client(int client_connection, int *n) {
   if ((current_read = read(client_connection, buffer, packet_length)) < 0) {
     error_handler("unable to read from socket");
   }
+  printf("buffer %s\n", buffer);
   char **token = tokenize(buffer, strlen(buffer));
   if (buffer != NULL)
     free(buffer);

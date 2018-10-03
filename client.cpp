@@ -164,7 +164,8 @@ void start_interactive() {
     char *buffer = NULL;
     long int buffer_len = 0;
     buffer_len = read_input(&buffer, stdin, NULL);
-    char **token = tokenize(buffer, buffer_len);
+    printf("%s %ld\n", buffer, strlen(buffer));
+    char **token = tokenize(buffer, strlen(buffer));
     printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
     if (strcmp(token[0], "connect") == 0) {
       connect_server(token[1], token[2]);
@@ -197,6 +198,7 @@ void start_batch(const char *path) {
     long int buffer_len = 0;
     int status = 0;
     buffer_len = read_input(&buffer, file, &status);
+    printf("%s\n", buffer);
     if (status) {
       fclose(file);
       break;
