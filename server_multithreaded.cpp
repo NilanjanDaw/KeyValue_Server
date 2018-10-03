@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-03T19:11:31+05:30
+ * @Last modified time: 2018-10-03T19:36:44+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -29,7 +29,7 @@
 #define BACKLOG_QUEUE 5
 #define MAX_NUM_TOKENS 4
 #define QUEUE_SIZE 1024
-
+#define HEADER_LENGTH 11
 using namespace std;
 
 int insert_index = 0, retrieve_index = 0, master_exit = 0;
@@ -73,10 +73,10 @@ void signal_handler(int signal) {
 
 int send_header(int length, int client_connection) {
 
-  char header[11];
+  char header[HEADER_LENGTH];
   int current_read = 0;
   sprintf(header, "%10d", length);
-  if (write(client_connection, header, 11) < 0) {
+  if (write(client_connection, header, HEADER_LENGTH) < 0) {
     error_handler("unable to read from socket");
   }
   return 0;
@@ -183,9 +183,9 @@ char** read_client(int client_connection, int *n) {
   *n = 0;
   int current_read = 0;
   char *buffer = NULL;
-  char header[11];
+  char header[HEADER_LENGTH];
 
-  if ((current_read = read(client_connection, header, 11)) < 0) {
+  if ((current_read = read(client_connection, header, HEADER_LENGTH)) < 0) {
     error_handler("unable to read from socket");
   } else if (current_read == 0) {
     return NULL;
