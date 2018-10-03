@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-02T01:38:30+05:30
+ * @Last modified time: 2018-10-03T01:19:33+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 
 int socket_file_descriptor = 0, port, n;
 
-void error_handler(char *msg) {
+void error_handler(const char *msg) {
   perror(msg);
   exit(1);
 }
@@ -161,26 +161,31 @@ char **tokenize(char *line, long int buffer_length) {
 
 void start_interactive() {
   while (1) {
-    char *buffer;
-    long int buffer_len;
+    char *buffer = NULL;
+    long int buffer_len = 0;
     buffer_len = read_input(&buffer, stdin, NULL);
     char **token = tokenize(buffer, buffer_len);
-    printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
-    if (strcmp(&(*token[0]), "connect") == 0) {
-      connect_server(&(*token[1]), &(*token[2]));
+    printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
+    if (strcmp(token[0], "connect") == 0) {
+      connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
       write_server(buffer);
     }
     for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
-      free(token[i]);
+      if (token[i] != NULL)
+        free(token[i]);
       token[i] = NULL;
     }
-    free(token);
-    token = NULL;
-    free(buffer);
-    buffer = NULL;
+    if (token != NULL) {
+      free(token);
+      token = NULL;
+    }
+    if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+    }
   }
 }
 
@@ -188,32 +193,37 @@ void start_batch(const char *path) {
 
   FILE *file = fopen(path, "r");
   while (!feof(file)) {
-    char *buffer;
-    long int buffer_len;
+    char *buffer = NULL;
+    long int buffer_len = 0;
     int status = 0;
     buffer_len = read_input(&buffer, file, &status);
     if (status) {
+      fclose(file);
       break;
     }
     char **token = tokenize(buffer, buffer_len);
-    printf("%s | %s | %s | %s\n", &(*token[0]), &(*token[1]), &(*token[2]), &(*token[3]));
-    if (strcmp(&(*token[0]), "connect") == 0) {
-      connect_server(&(*token[1]), &(*token[2]));
+    printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
+    if (strcmp(token[0], "connect") == 0) {
+      connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
       write_server(buffer);
     }
     for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
-      free(token[i]);
+      if (token[i] != NULL)
+        free(token[i]);
       token[i] = NULL;
     }
-    free(token);
-    token = NULL;
-    free(buffer);
-    buffer = NULL;
+    if (token != NULL) {
+      free(token);
+      token = NULL;
+    }
+    if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+    }
   }
-  fclose(file);
 }
 
 int main(int argc, char const *argv[]) {

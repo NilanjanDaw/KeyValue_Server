@@ -4,9 +4,11 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-02T01:41:34+05:30
+ * @Last modified time: 2018-10-03T18:57:10+05:30
  * @Copyright: Nilanjan Daw
  */
+
+#include <map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -28,18 +30,21 @@
 #define MAX_NUM_TOKENS 4
 #define QUEUE_SIZE 1024
 
+using namespace std;
 
 int insert_index = 0, retrieve_index = 0, master_exit = 0;
 int current_queue_element_count = 0;
 int client_file_descriptor[QUEUE_SIZE] = {0};
 int socket_file_descriptor, port;
-char **hashtable;
+
+map<int, char*> hashtable;
+
 long int table_size;
 
 pthread_cond_t generator = PTHREAD_COND_INITIALIZER, retriever = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void error_handler(char *error_msg) {
+void error_handler(const char *error_msg) {
   perror(error_msg);
   exit(1);
 }
@@ -57,7 +62,6 @@ void signal_handler(int signal) {
       printf("Closed server socket\n");
       close(socket_file_descriptor);
     }
-    free(hashtable);
   }
   exit(EXIT_SUCCESS);
 }
@@ -72,7 +76,7 @@ int send_header(int length, int client_connection) {
   return 0;
 }
 
-void write_client(int client_connection, char *buffer) {
+void write_client(int client_connection, const char *buffer) {
   send_header(strlen(buffer), client_connection);
   if (write(client_connection, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
@@ -95,25 +99,35 @@ int retrieve(int *memory) {
   return 0;
 }
 
-int create(int key, char *buffer) {
-  hashtable[key] = (char *) malloc(strlen(buffer) * sizeof(char));
-  bzero(hashtable[key], strlen(buffer));
-  strcpy(hashtable[key], buffer);
+int create(int key, char *value) {
+  if (hashtable[key] != NULL)
+    return -1;
+  char *new_value = (char *) malloc(strlen(value) * sizeof(char));
+  bzero(new_value, strlen(value));
+  strcpy(new_value, value);
+  hashtable[key] = new_value;
   return 0;
 }
 
-int delete(int key) {
-  free(hashtable[key]);
-  hashtable[key] = NULL;
+char* read(int key) {
+  return hashtable[key];
+}
+
+int delete_key(int key) {
+  if (hashtable[key] == NULL)
+    return -1;
+  hashtable.erase(key);
   return 0;
 }
 
 int update(int key, char *buffer) {
+  if (hashtable[key] == NULL)
+    return -1;
   free(hashtable[key]);
-  hashtable[key] = NULL;
-  hashtable[key] = (char *) malloc(strlen(buffer) * sizeof(char));
-  bzero(hashtable[key], strlen(buffer));
-  strcpy(hashtable[key], buffer);
+  char *new_value = (char *) malloc(strlen(buffer) * sizeof(char));
+  bzero(new_value, strlen(buffer));
+  strcpy(new_value, buffer);
+  hashtable[key] = new_value;
   return 0;
 }
 
@@ -157,6 +171,8 @@ char** read_client(int client_connection, int *n) {
 
   if ((current_read = read(client_connection, header, 11)) < 0) {
     error_handler("unable to read from socket");
+  } else if (current_read == 0) {
+    return NULL;
   }
   int packet_length = atoi(header);
   printf("%d\n", packet_length);
@@ -167,6 +183,8 @@ char** read_client(int client_connection, int *n) {
     error_handler("unable to read from socket");
   }
   char **token = tokenize(buffer, strlen(buffer));
+  if (buffer != NULL)
+    free(buffer);
   return token;
 }
 
@@ -189,10 +207,16 @@ int handle_request(int client_connection) {
   while (1) {
 
     char **token = read_client(client_connection, &n);
-    printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
-    printf("%d %d\n", strcmp(token[0], "create"), strcmp(token[0], "read"));
-    if (strcmp(token[0], "exit00") == 0) {
-      free_token(token);
+    if (token != NULL)
+      printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
+    if (token == NULL || (token[0], "exit00") == 0) {
+      if (token != NULL) {
+        for(size_t i = 0; i < MAX_NUM_TOKENS; i++) {
+          if (token[i] != NULL)
+            free(token[i]);
+        }
+        free_token(token);
+      }
       close(client_connection);
       break;
 
@@ -211,13 +235,15 @@ int handle_request(int client_connection) {
     } else if (strcmp(token[0], "read") == 0) {
 
       int key = atoi(token[1]);
+      printf("Key to find %d\n", key);
       if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
         printf("No entry\n");
         write_client(client_connection, "Error no such entry\n");
       }
       else {
-          printf("%s\n", hashtable[key]);
-          write_client(client_connection, hashtable[key]);
+        char* value = read(key);
+        printf("Key found %s\n", value);
+        write_client(client_connection, value);
       }
 
     } else if (strcmp(token[0], "delete") == 0) {
@@ -228,7 +254,7 @@ int handle_request(int client_connection) {
         write_client(client_connection, "Error no such entry\n");
       }
       else {
-        delete(key);
+        delete_key(key);
         printf("Ok\n");
         write_client(client_connection, "Ok\n");
       }
@@ -319,8 +345,6 @@ int main(int argc, char *argv[]) {
         "%d processors available.\n",
         get_nprocs_conf(), get_nprocs());
   worker_thread_count = 2 * get_nprocs();
-  size_t hashtable_size = 2 * (size_t)INT_MAX + 1;
-  hashtable = (char **)malloc(BUFFER_LENGTH * sizeof(char *));
   pthread_t prod_thread;
   pthread_t *consumer_threads;
 
