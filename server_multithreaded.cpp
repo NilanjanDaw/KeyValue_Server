@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T18:04:57+05:30
+ * @Last modified time: 2018-10-06T19:05:54+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/sysinfo.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <signal.h>
@@ -36,7 +37,7 @@ int insert_index = 0, retrieve_index = 0, master_exit = 0;
 int current_queue_element_count = 0;
 int client_file_descriptor[QUEUE_SIZE] = {0};
 int socket_file_descriptor, port;
-
+char* ip;
 map<int, char*> hashtable;
 
 long int table_size;
@@ -114,7 +115,7 @@ int retrieve(int *memory) {
   return 0;
 }
 
-int create(int key, char *value) {
+int create_key(int key, char *value) {
 
   if (hashtable[key] != NULL)
     return -1;
@@ -127,7 +128,7 @@ int create(int key, char *value) {
   return 0;
 }
 
-char* read(int key) {
+char* read_key(int key) {
   char* value = NULL;
   if (hashtable[key] != NULL) {
     value = (char*) malloc((strlen(hashtable[key]) + 1) * sizeof(char));
@@ -145,7 +146,7 @@ int delete_key(int key) {
   return 0;
 }
 
-int update(int key, char *buffer) {
+int update_key(int key, char *buffer) {
 
   if (hashtable[key] == NULL)
     return -1;
@@ -258,7 +259,7 @@ int handle_request(int client_connection) {
       int key = atoi(token[1]);
       if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
 
-        create(key, token[3]);
+        create_key(key, token[3]);
         printf("created entry with length %ld\n", strlen(token[3]));
         write_client(client_connection, "Ok");
 
@@ -269,7 +270,7 @@ int handle_request(int client_connection) {
     } else if (strcmp(token[0], "read") == 0) {
       printf("read\n");
       int key = atoi(token[1]);
-      char* value = read(key);
+      char* value = read_key(key);
       if (value == NULL || strlen(value) == 0) {
         printf("No entry\n");
         write_client(client_connection, "Error no such entry");
@@ -301,7 +302,7 @@ int handle_request(int client_connection) {
         printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       } else {
-        update(key, token[3]);
+        update_key(key, token[3]);
         printf("Ok\n");
         write_client(client_connection, "Ok");
       }
@@ -325,7 +326,7 @@ void *master(void *data) {
   bzero((char *) &address, sizeof(address));
 
   address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
+  address.sin_addr.s_addr = inet_addr(ip);
   address.sin_port = htons(port);
 
   if (bind(socket_file_descriptor, (struct sockaddr *) &address, sizeof(address)) < 0)
@@ -390,9 +391,10 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  if (argc < 2)
-    error_handler("Port number must be provided");
-  port = atoi(argv[1]);
+  if (argc < 3)
+    error_handler("IP address and Port number must be provided");
+  port = atoi(argv[2]);
+  ip = argv[1];
   //create master thread
   pthread_create(&prod_thread, NULL, master, (void *)&prod_thread_id);
   consumer_threads = (pthread_t*) malloc(worker_thread_count * sizeof(pthread_t));
