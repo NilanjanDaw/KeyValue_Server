@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-04T00:40:38+05:30
+ * @Last modified time: 2018-10-06T17:23:26+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#define BUFFER_LENGTH 1024
 #define MAX_NUM_TOKENS 4
 
 
@@ -27,30 +26,23 @@ void error_handler(const char *msg) {
 }
 
 long int read_input(char **memory, FILE* file, int *status) {
-  long int i = 0, buffer_multiple = 2;
-  long int current_buffer_size = BUFFER_LENGTH;
-  char c, *buffer;
 
-  buffer = (char *)malloc(current_buffer_size * sizeof(char));
-  bzero(buffer, current_buffer_size);
-  while ((c = getc(file)) != '\n') {
-    buffer[i] = c;
-    i++;
-    if (i >= current_buffer_size - 3) {
-      buffer = (char *)realloc(buffer, BUFFER_LENGTH * buffer_multiple * sizeof(char));
-      current_buffer_size = BUFFER_LENGTH * buffer_multiple;
+  // char buffer[BUFFER_LENGTH];
+  // bzero(buffer, BUFFER_LENGTH);
+  // char* result = fgets(buffer, BUFFER_LENGTH, file);
+  // if (result == NULL && status != NULL)
+  //   *status = 1;
+  // buffer[strlen(buffer)] = ' ';
+  // *memory = buffer;
 
-      buffer_multiple++;
-    }
-    if (feof(file) && status != NULL) {
+  char *buffer = NULL;
+  size_t size = 0;
+  if (getline(&buffer, &size, file) == -1) {
+    if (status != NULL)
       *status = 1;
-      break;
-    }
   }
-  // buffer[i++] = ' ';
-  memset(buffer + i, '\0', (current_buffer_size - i) * sizeof(char));
   *memory = buffer;
-  return current_buffer_size;
+  return strlen(buffer);
 }
 
 int connect_server(char *address, char* port_address) {
@@ -198,13 +190,13 @@ void start_batch(const char *path) {
     long int buffer_len = 0;
     int status = 0;
     buffer_len = read_input(&buffer, file, &status);
-    printf("%s\n", buffer);
+    // printf("%s\n", buffer);
     if (status) {
       fclose(file);
       break;
     }
     char **token = tokenize(buffer, buffer_len);
-    printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
+    // printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
     if (strcmp(token[0], "connect") == 0) {
       connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {

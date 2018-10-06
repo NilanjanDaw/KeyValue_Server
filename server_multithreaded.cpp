@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-04T01:48:53+05:30
+ * @Last modified time: 2018-10-06T17:33:03+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -213,7 +213,7 @@ char** read_client(int client_connection, int *n) {
   if ((current_read = read(client_connection, buffer, packet_length)) < 0) {
     error_handler("unable to read from socket");
   }
-  printf("buffer %s\n", buffer);
+  // printf("buffer %s\n", buffer);
   char **token = tokenize(buffer, strlen(buffer));
   if (buffer != NULL)
     free(buffer);
@@ -240,11 +240,10 @@ int handle_request(int client_connection) {
 
   int n;
   while (1) {
-    printf("read token\n");
     char **token = read_client(client_connection, &n);
 
-    if (token != NULL)
-      printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
+    // if (token != NULL)
+    //   printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
 
     if (token == NULL || (token[0], "exit00") == 0) {
 
