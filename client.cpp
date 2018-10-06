@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T19:14:32+05:30
+ * @Last modified time: 2018-10-06T19:34:39+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -25,6 +25,23 @@ void error_handler(const char *msg) {
   exit(1);
 }
 
+void free_token(char **token) {
+
+  if (token != NULL) {
+    for (int i = 0; i < 4; i++) {
+      if (token[i] != NULL) {
+        free(token[i]);
+        token[i] = NULL;
+      }
+    }
+  }
+
+  if (token != NULL) {
+    free(token);
+    token = NULL;
+  }
+}
+
 long int read_input(char **memory, FILE* file, int *status) {
 
   char *buffer = NULL;
@@ -35,6 +52,16 @@ long int read_input(char **memory, FILE* file, int *status) {
   }
   *memory = buffer;
   return strlen(buffer);
+}
+
+int send_header(int length) {
+  char header[11];
+  int current_read = 0;
+  sprintf(header, "%10d", length);
+  if ((current_read = write(socket_file_descriptor, header, 11)) < 0) {
+    error_handler("unable to read from socket");
+  }
+  return 0;
 }
 
 int connect_server(char *address, char* port_address) {
@@ -60,16 +87,6 @@ int connect_server(char *address, char* port_address) {
     error_handler("unable to connect to host server");
   printf("OK\n");
   return socket_file_descriptor;
-}
-
-int send_header(int length) {
-  char header[11];
-  int current_read = 0;
-  sprintf(header, "%10d", length);
-  if ((current_read = write(socket_file_descriptor, header, 11)) < 0) {
-    error_handler("unable to read from socket");
-  }
-  return 0;
 }
 
 int disconnect_server() {
@@ -152,17 +169,12 @@ void start_interactive() {
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
-      write_server(buffer);
+      if (socket_file_descriptor)
+        write_server(buffer);
+      else
+        printf("Error: No active TCP connection\n");
     }
-    for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
-      if (token[i] != NULL)
-        free(token[i]);
-      token[i] = NULL;
-    }
-    if (token != NULL) {
-      free(token);
-      token = NULL;
-    }
+    free_token(token);
     if (buffer != NULL) {
       free(buffer);
       buffer = NULL;
@@ -181,6 +193,10 @@ void start_batch(const char *path) {
     printf("%s\n", buffer);
     if (status) {
       fclose(file);
+      if (buffer != NULL) {
+        free(buffer);
+        buffer = NULL;
+      }
       printf("Shutting Client\nDone\n");
       break;
     }
@@ -190,17 +206,12 @@ void start_batch(const char *path) {
     } else if (strcmp(token[0], "disconnect") == 0) {
       disconnect_server();
     } else {
-      write_server(buffer);
+      if (socket_file_descriptor)
+        write_server(buffer);
+      else
+        printf("Error: No active TCP connection\n");
     }
-    for (size_t i = 0; i < MAX_NUM_TOKENS; i++) {
-      if (token[i] != NULL)
-        free(token[i]);
-      token[i] = NULL;
-    }
-    if (token != NULL) {
-      free(token);
-      token = NULL;
-    }
+    free_token(token);
     if (buffer != NULL) {
       free(buffer);
       buffer = NULL;

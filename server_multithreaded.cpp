@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T19:05:54+05:30
+ * @Last modified time: 2018-10-06T19:57:11+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -186,8 +186,10 @@ char **tokenize(char *line, long int buffer_length) {
   }
   tokens[tokenNo] = (char*)malloc(buffer_length * sizeof(char));
   strcpy(tokens[tokenNo++], token);
-
-  free(token);
+  if (token != NULL) {
+    free(token);
+    token = NULL;
+  }
   tokens[tokenNo] = NULL;
   return tokens;
 }
@@ -306,6 +308,8 @@ int handle_request(int client_connection) {
         printf("Ok\n");
         write_client(client_connection, "Ok");
       }
+    } else {
+      write_client(client_connection, "Error: Malformed Request");
     }
 
     free_token(token);
