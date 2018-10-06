@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T18:10:54+05:30
+ * @Last modified time: 2018-10-06T19:14:32+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -26,14 +26,6 @@ void error_handler(const char *msg) {
 }
 
 long int read_input(char **memory, FILE* file, int *status) {
-
-  // char buffer[BUFFER_LENGTH];
-  // bzero(buffer, BUFFER_LENGTH);
-  // char* result = fgets(buffer, BUFFER_LENGTH, file);
-  // if (result == NULL && status != NULL)
-  //   *status = 1;
-  // buffer[strlen(buffer)] = ' ';
-  // *memory = buffer;
 
   char *buffer = NULL;
   size_t size = 0;
@@ -155,7 +147,6 @@ void start_interactive() {
     long int buffer_len = 0;
     buffer_len = read_input(&buffer, stdin, NULL);
     char **token = tokenize(buffer, strlen(buffer));
-    // printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
     if (strcmp(token[0], "connect") == 0) {
       connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {
@@ -194,7 +185,6 @@ void start_batch(const char *path) {
       break;
     }
     char **token = tokenize(buffer, buffer_len);
-    // printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
     if (strcmp(token[0], "connect") == 0) {
       connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {
