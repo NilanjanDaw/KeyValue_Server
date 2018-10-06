@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T17:33:03+05:30
+ * @Last modified time: 2018-10-06T18:04:57+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -82,7 +82,6 @@ void signal_handler(int signal) {
 int send_header(int length, int client_connection) {
 
   char header[HEADER_LENGTH];
-  int current_read = 0;
   sprintf(header, "%10d", length);
   if (write(client_connection, header, HEADER_LENGTH) < 0) {
     error_handler("unable to read from socket");
@@ -206,7 +205,6 @@ char** read_client(int client_connection, int *n) {
   }
 
   int packet_length = atoi(header) + 1;
-  printf("%d\n", packet_length);
   buffer = (char *) malloc(packet_length * sizeof(char));
   bzero(buffer, packet_length);
 
@@ -223,10 +221,12 @@ char** read_client(int client_connection, int *n) {
 
 void free_token(char **token) {
 
-  for (int i = 0; i < 4; i++) {
-    if (token[i] != NULL) {
-      free(token[i]);
-      token[i] = NULL;
+  if (token != NULL) {
+    for (int i = 0; i < 4; i++) {
+      if (token[i] != NULL) {
+        free(token[i]);
+        token[i] = NULL;
+      }
     }
   }
 
@@ -245,17 +245,11 @@ int handle_request(int client_connection) {
     // if (token != NULL)
     //   printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
 
-    if (token == NULL || (token[0], "exit00") == 0) {
+    if (token == NULL || strcmp(token[0], "exit00") == 0) {
 
-      if (token != NULL) {
-
-        for(size_t i = 0; i < MAX_NUM_TOKENS; i++) {
-          if (token[i] != NULL)
-            free(token[i]);
-        }
-        free_token(token);
-      }
+      free_token(token);
       close(client_connection);
+      printf("Client connection successfully terminated\n");
       break;
 
     } else if (strcmp(token[0], "create") == 0) {
@@ -281,7 +275,7 @@ int handle_request(int client_connection) {
         write_client(client_connection, "Error no such entry");
       }
       else {
-        printf("Key / value found %d %s\n", key, value);
+        printf("KV found for %d\n", key);
         write_client(client_connection, value);
         free(value);
       }
@@ -296,7 +290,7 @@ int handle_request(int client_connection) {
       else {
 
         delete_key(key);
-        printf("Ok");
+        printf("Ok\n");
         write_client(client_connection, "Ok");
       }
 
@@ -308,7 +302,7 @@ int handle_request(int client_connection) {
         write_client(client_connection, "Error no such entry");
       } else {
         update(key, token[3]);
-        printf("Ok");
+        printf("Ok\n");
         write_client(client_connection, "Ok");
       }
     }

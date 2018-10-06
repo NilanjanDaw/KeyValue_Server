@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T17:23:26+05:30
+ * @Last modified time: 2018-10-06T18:10:54+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -107,18 +107,16 @@ void write_server(char *buffer) {
     error_handler("unable to read from socket");
   }
   int packet_length = atoi(header) + 1;
-  printf("%d\n", packet_length);
   read_reply = (char *) malloc(packet_length * sizeof(char));
   bzero(read_reply, packet_length);
 
   if((response_read = read(socket_file_descriptor, read_reply, packet_length)) < 0)
     error_handler("unable to read from socket");
   else if (response_read > 0) {
-    printf("%s\n", read_reply);
+    printf("Server Reply: %s\n", read_reply);
   }
   free(read_reply);
   read_reply = NULL;
-  printf("done\n");
 }
 
 char **tokenize(char *line, long int buffer_length) {
@@ -156,9 +154,8 @@ void start_interactive() {
     char *buffer = NULL;
     long int buffer_len = 0;
     buffer_len = read_input(&buffer, stdin, NULL);
-    printf("%s %ld\n", buffer, strlen(buffer));
     char **token = tokenize(buffer, strlen(buffer));
-    printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
+    // printf("%s | %s | %s | %s\n", token[0], token[1], token[2], token[3]);
     if (strcmp(token[0], "connect") == 0) {
       connect_server(token[1], token[2]);
     } else if (strcmp(token[0], "disconnect") == 0) {
@@ -190,9 +187,10 @@ void start_batch(const char *path) {
     long int buffer_len = 0;
     int status = 0;
     buffer_len = read_input(&buffer, file, &status);
-    // printf("%s\n", buffer);
+    printf("%s\n", buffer);
     if (status) {
       fclose(file);
+      printf("Shutting Client\nDone\n");
       break;
     }
     char **token = tokenize(buffer, buffer_len);
