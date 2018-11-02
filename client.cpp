@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T20:12:06+05:30
+ * @Last modified time: 2018-10-07T18:06:03+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -75,14 +75,14 @@ int connect_server(char *address, char* port_address) {
 
   if ((socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     error_handler("unable to open socket");
-  printf("Client socket initialised\n");
+  // printf("Client socket initialised\n");
   bzero((char *)&server_address, sizeof(server_address));
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons(port);
 
   if (inet_pton(AF_INET, address, &server_address.sin_addr) <= 0)
     error_handler("unable to resolve host");
-  printf("Server hostname resolved\n");
+  // printf("Server hostname resolved\n");
   if (connect(socket_file_descriptor, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     error_handler("unable to connect to host server");
   printf("OK\n");
@@ -122,7 +122,7 @@ void write_server(char *buffer) {
   if((response_read = read(socket_file_descriptor, read_reply, packet_length)) < 0)
     error_handler("unable to read from socket");
   else if (response_read > 0) {
-    printf("Server Reply: %s\n", read_reply);
+    printf("%s\n", read_reply);
   }
   free(read_reply);
   read_reply = NULL;

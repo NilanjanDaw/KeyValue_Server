@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T19:57:11+05:30
+ * @Last modified time: 2018-10-07T21:38:07+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -26,7 +26,7 @@
 #include <limits.h>
 
 #define SLEEP_NANOSEC 100
-#define THREAD_COUNT 130
+#define THREAD_COUNT 150
 #define BACKLOG_QUEUE 5
 #define MAX_NUM_TOKENS 4
 #define QUEUE_SIZE 1024
@@ -263,7 +263,7 @@ int handle_request(int client_connection) {
 
         create_key(key, token[3]);
         printf("created entry with length %ld\n", strlen(token[3]));
-        write_client(client_connection, "Ok");
+        write_client(client_connection, "OK");
 
       } else {
         printf("Error entry exists\n");
@@ -293,8 +293,8 @@ int handle_request(int client_connection) {
       else {
 
         delete_key(key);
-        printf("Ok\n");
-        write_client(client_connection, "Ok");
+        printf("OK\n");
+        write_client(client_connection, "OK");
       }
 
     } else if (strcmp(token[0], "update") == 0) {
@@ -305,8 +305,8 @@ int handle_request(int client_connection) {
         write_client(client_connection, "Error no such entry");
       } else {
         update_key(key, token[3]);
-        printf("Ok\n");
-        write_client(client_connection, "Ok");
+        printf("OK\n");
+        write_client(client_connection, "OK");
       }
     } else {
       write_client(client_connection, "Error: Malformed Request");
@@ -326,7 +326,7 @@ void *master(void *data) {
   printf("Master thread started with thread_id %d\n", thread_id);
   if ((socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     error_handler("unable to create socket");
-  printf("Server socket initialised\n");
+  // printf("Server socket initialised\n");
   bzero((char *) &address, sizeof(address));
 
   address.sin_family = AF_INET;
@@ -336,14 +336,14 @@ void *master(void *data) {
   if (bind(socket_file_descriptor, (struct sockaddr *) &address, sizeof(address)) < 0)
     error_handler("unable to bind to port");
 
-  printf("Server socket bound to port %d\n", port);
+  // printf("Server socket bound to port %d\n", port);
   if (listen(socket_file_descriptor, BACKLOG_QUEUE) < 0)
     error_handler("unable to listen to given port");
   printf("Server started listening on port %d\n", port);
 
   while(1) {
 
-    printf("Waiting for client connections\n");
+    printf("Master Waiting for client connections\n");
     socklen_t cli_addr_size = sizeof(client_address);
     int new_connection = accept(socket_file_descriptor, (struct sockaddr *) &client_address,
                                     &cli_addr_size);
@@ -373,7 +373,7 @@ void* service_request(void* id) {
     pthread_mutex_lock(&mutex);
 
     while (current_queue_element_count <= 0) {
-      printf("Buffer empty. Thread %d sleeping.\n", thread_id);
+      // printf("Buffer empty. Thread %d sleeping.\n", thread_id);
       pthread_cond_wait(&retriever, &mutex);
     }
 
@@ -404,11 +404,11 @@ int main(int argc, char *argv[]) {
   consumer_threads = (pthread_t*) malloc(worker_thread_count * sizeof(pthread_t));
 
   for (int i = 1; i <= THREAD_COUNT; i++) {
-    printf("Thread #%d spawned\n", i);
+    // printf("Thread #%d spawned\n", i);
     int id = i;
     pthread_create(&consumer_threads[i - 1], NULL, service_request, (void *)&id);
   }
-
+  printf("%d worker threads initialized\n", THREAD_COUNT);
   sleep(1000);
   return 0;
 }
