@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-10-06T20:12:06+05:30
+ * @Last modified time: 2018-11-03T03:28:26+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -18,13 +18,14 @@
 #include <string.h>
 
 #define MAX_NUM_TOKENS 4
-
+#define MAX_KEY 10000
+#define SEED 99
 
 int socket_file_descriptor = 0, port, n;
 
 void error_handler(const char *msg) {
   perror(msg);
-  exit(1);
+  // exit(1);
 }
 
 void signal_handler(int signal) {
@@ -52,16 +53,33 @@ void free_token(char **token) {
   }
 }
 
-long int read_input(char **memory, FILE* file, int *status) {
-
+long int read_input(char **memory, int *status) {
+  const char* operators[6] = {"connect", "create ", "read ", "update ", "delete ", "disconnect"};
   char *buffer = NULL;
   size_t size = 0;
-  if (getline(&buffer, &size, file) == -1) {
-    if (status != NULL)
-      *status = 1;
+  int index = rand() % 6;
+  // index = 1;
+  // printf("%s\n", operators[index]);
+  *status = index;
+  if (index == 0 || index == 5)
+    return 0;
+  else {
+    char key_string[5];
+    char message[1024] = {0};
+    int key = rand() % MAX_KEY;
+    sprintf(key_string, "%d", key);
+    strcat(message, operators[index]);
+    strcat(message, key_string);
+    if (index == 1 || index == 3) {
+      char value[] = " Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt";
+      strcat(message, value);
+      // printf("%s %ld\n", message, strlen(message));
+    }
+    *memory = (char*)malloc(strlen(message) * sizeof(char));
+    strcpy(*memory, message);
+    return strlen(message);
   }
-  *memory = buffer;
-  return strlen(buffer);
+  // return strlen(buffer);
 }
 
 int send_header(int length) {
@@ -143,7 +161,7 @@ char **tokenize(char *line, long int buffer_length) {
   char *token = (char *)malloc(buffer_length * sizeof(char));
   int i, tokenIndex = 0, tokenNo = 0;
 
-  for(i = 0; i < strlen(line); i++){
+  for(i = 0; i < strlen(line); i++) {
 
     char readChar = line[i];
 
@@ -169,64 +187,64 @@ char **tokenize(char *line, long int buffer_length) {
 }
 
 
-void generate_load(void* id) {
+void* generate_load(void* id) {
 
-  printf("thread\n");
+  // printf("thread\n");
   int thread_id = *((int *)id);
-  // FILE *file = fopen("", "r");
-  // while (!feof(file)) {
-  //   char *buffer = NULL;
-  //   long int buffer_len = 0;
-  //   int status = 0;
-  //   buffer_len = read_input(&buffer, file, &status);
-  //   printf("%s\n", buffer);
-  //   if (status) {
-  //     fclose(file);
-  //     if (buffer != NULL) {
-  //       free(buffer);
-  //       buffer = NULL;
-  //     }
-  //     printf("Shutting Client\nDone\n");
-  //     break;
-  //   }
-  //   char **token = tokenize(buffer, buffer_len);
-  //   if (strcmp(token[0], "connect") == 0) {
-  //     connect_server(token[1], token[2]);
-  //   } else if (strcmp(token[0], "disconnect") == 0) {
-  //     disconnect_server();
-  //   } else {
-  //     if (socket_file_descriptor)
-  //       write_server(buffer);
-  //     else
-  //       printf("Error: No active TCP connection\n");
-  //   }
-  //   free_token(token);
-  //   if (buffer != NULL) {
-  //     free(buffer);
-  //     buffer = NULL;
-  //   }
-  // }
+  while (1) {
+    char *buffer = NULL;
+    long int buffer_len = 0;
+    int status = 0;
+    buffer_len = read_input(&buffer, &status);
+    if (buffer_len != 0)
+      printf("%s\n", buffer);
+    // if (status) {
+    //   if (buffer != NULL) {
+    //     free(buffer);
+    //     buffer = NULL;
+    //   }
+    //   printf("Shutting Client\nDone\n");
+    //   break;
+    // }
+
+    if (status == 0) {
+      connect_server("127.0.0.1", "8080");
+    } else if (status == 5) {
+      disconnect_server();
+    } else {
+      if (socket_file_descriptor)
+        write_server(buffer);
+      else
+        printf("Error: No active TCP connection\n");
+    }
+    if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+    }
+    break;
+  }
 }
 
 int main(int argc, char const *argv[]) {
 
   pthread_t *consumer_threads;
   if (argc < 3) {
-    printf("Error mode required\nUsage: ./executable num_threads duration\n");
+    printf("Error mode required\nUsage: ./executable server_ip server_port num_threads duration\n");
     exit(0);
   }
   signal(SIGALRM, signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGINT, signal_handler);
-
-  for (int i = 1; i <= atoi(argv[1]); i++) {
-    printf("Thread #%d spawned\n", i);
+  int num_threads = atoi(argv[3]);
+  int runtime = atoi(argv[4]);
+  srand(SEED);
+  for (int i = 1; i <= num_threads; i++) {
+    // printf("Thread #%d spawned\n", i);
     int id = i;
     pthread_create(&consumer_threads[i - 1], NULL, generate_load, (void *)&id);
   }
 
-  alarm(atoi(argv[2]));
+  alarm(runtime);
   pause();
-  // generate_load();
   return 0;
 }
