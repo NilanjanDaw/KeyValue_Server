@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-02T21:58:36+05:30
+ * @Last modified time: 2018-11-05T02:37:42+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -26,10 +26,10 @@
 #include <limits.h>
 
 #define SLEEP_NANOSEC 100
-#define THREAD_COUNT 150
+#define THREAD_COUNT 30000
 #define BACKLOG_QUEUE 5
 #define MAX_NUM_TOKENS 4
-#define QUEUE_SIZE 1024
+#define QUEUE_SIZE 2048
 #define HEADER_LENGTH 11
 using namespace std;
 
@@ -47,10 +47,14 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void error_handler(const char *error_msg) {
   perror(error_msg);
-  exit(1);
+  // exit(1);
 }
 
 void signal_handler(int signal) {
+
+  if (signal == SIGPIPE) {
+    printf("SIGPIPE\n");
+  }
 
   if (signal == SIGINT || signal == SIGTERM) {
 
@@ -95,7 +99,7 @@ void write_client(int client_connection, const char *buffer) {
   send_header(strlen(buffer), client_connection);
   if (write(client_connection, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
-  printf("done\n");
+  // printf("done\n");
 }
 
 int insert(int new_client) {
@@ -120,8 +124,8 @@ int create_key(int key, char *value) {
   if (hashtable[key] != NULL)
     return -1;
 
-  char *new_value = (char *) malloc(strlen(value) * sizeof(char));
-  bzero(new_value, strlen(value));
+  char *new_value = (char *) malloc((strlen(value) + 1) * sizeof(char));
+  bzero(new_value, strlen(value) + 1);
   strcpy(new_value, value);
 
   hashtable[key] = new_value;
@@ -130,10 +134,11 @@ int create_key(int key, char *value) {
 
 char* read_key(int key) {
   char* value = NULL;
-  if (hashtable[key] != NULL) {
-    value = (char*) malloc((strlen(hashtable[key]) + 1) * sizeof(char));
-    bzero(value, (strlen(hashtable[key]) + 1));
-    strcpy(value, hashtable[key]);
+  if (hashtable.find(key) != hashtable.end()) {
+    size_t length = strlen(hashtable.find(key)->second);
+    value = (char*) malloc((length + 1) * sizeof(char));
+    bzero(value, (length + 1));
+    strcpy(value, hashtable.find(key)->second);
   }
   return value;
 }
@@ -152,8 +157,8 @@ int update_key(int key, char *buffer) {
     return -1;
 
   free(hashtable[key]);
-  char *new_value = (char *) malloc(strlen(buffer) * sizeof(char));
-  bzero(new_value, strlen(buffer));
+  char *new_value = (char *) malloc((strlen(buffer) + 1) * sizeof(char));
+  bzero(new_value, strlen(buffer) + 1);
   strcpy(new_value, buffer);
 
   hashtable[key] = new_value;
@@ -202,7 +207,7 @@ char** read_client(int client_connection, int *n) {
   char header[HEADER_LENGTH];
 
   if ((current_read = read(client_connection, header, HEADER_LENGTH)) < 0) {
-    error_handler("unable to read from socket");
+    error_handler("unable to read from socket 210");
   } else if (current_read == 0) {
     return NULL;
   }
@@ -212,7 +217,7 @@ char** read_client(int client_connection, int *n) {
   bzero(buffer, packet_length);
 
   if ((current_read = read(client_connection, buffer, packet_length)) < 0) {
-    error_handler("unable to read from socket");
+    error_handler("unable to read from socket 220");
   }
   // printf("buffer %s\n", buffer);
   char **token = tokenize(buffer, strlen(buffer));
@@ -225,7 +230,7 @@ char** read_client(int client_connection, int *n) {
 void free_token(char **token) {
 
   if (token != NULL) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i <= 4; i++) {
       if (token[i] != NULL) {
         free(token[i]);
         token[i] = NULL;
@@ -252,60 +257,60 @@ int handle_request(int client_connection) {
 
       free_token(token);
       close(client_connection);
-      printf("Client connection successfully terminated\n");
+      // printf("Client connection successfully terminated\n");
       break;
 
     } else if (strcmp(token[0], "create") == 0) {
-      printf("create\n");
+      // printf("create\n");
       long int buffer_len = strtol(token[2], NULL, 10);
       int key = atoi(token[1]);
-      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
+      if (hashtable.find(key) == hashtable.end()) {
 
         create_key(key, token[3]);
-        printf("created entry with length %ld\n", strlen(token[3]));
+        // printf("created entry with length %ld\n", strlen(token[3]));
         write_client(client_connection, "OK");
 
       } else {
-        printf("Error entry exists\n");
+        // printf("Error entry exists\n");
         write_client(client_connection, "Error entry exists");
       }
     } else if (strcmp(token[0], "read") == 0) {
-      printf("read\n");
+      // printf("read\n");
       int key = atoi(token[1]);
       char* value = read_key(key);
       if (value == NULL || strlen(value) == 0) {
-        printf("No entry\n");
+        // printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       }
       else {
-        printf("KV found for %d\n", key);
+        // printf("KV found for %d\n", key);
         write_client(client_connection, value);
         free(value);
       }
 
     } else if (strcmp(token[0], "delete") == 0) {
-      printf("delete\n");
+      // printf("delete\n");
       int key = atoi(token[1]);
-      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-        printf("No entry\n");
+      if (hashtable.find(key) == hashtable.end()) {
+        // printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       }
       else {
 
         delete_key(key);
-        printf("OK\n");
+        // printf("OK\n");
         write_client(client_connection, "OK");
       }
 
     } else if (strcmp(token[0], "update") == 0) {
-      printf("update\n");
+      // printf("update\n");
       int key = atoi(token[1]);
-      if (hashtable[key] == NULL || strlen(hashtable[key]) == 0) {
-        printf("No entry\n");
+      if (hashtable.find(key) == hashtable.end()) {
+        // printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       } else {
         update_key(key, token[3]);
-        printf("OK\n");
+        // printf("OK\n");
         write_client(client_connection, "OK");
       }
     } else {
@@ -343,14 +348,14 @@ void *master(void *data) {
 
   while(1) {
 
-    printf("Master Waiting for client connections\n");
+    // printf("Master Waiting for client connections\n");
     socklen_t cli_addr_size = sizeof(client_address);
     int new_connection = accept(socket_file_descriptor, (struct sockaddr *) &client_address,
                                     &cli_addr_size);
 
     if (new_connection < 0)
       error_handler("unable to accept client connection");
-    printf("New client connection\n");
+    // printf("New client connection\n");
     pthread_mutex_lock(&mutex);
 
     while (current_queue_element_count == QUEUE_SIZE) {
@@ -388,27 +393,36 @@ void* service_request(void* id) {
 
 int main(int argc, char *argv[]) {
 
-  int prod_thread_id = 0, worker_thread_count;
+  int prod_thread_id = 0, worker_thread_count, thread_status;
   pthread_t prod_thread;
   pthread_t *consumer_threads;
 
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
+  signal(SIGPIPE, signal_handler);
 
   if (argc < 3)
     error_handler("IP address and Port number must be provided");
   port = atoi(argv[2]);
   ip = argv[1];
+  worker_thread_count = atoi(argv[3]);
   //create master thread
   pthread_create(&prod_thread, NULL, master, (void *)&prod_thread_id);
   consumer_threads = (pthread_t*) malloc(worker_thread_count * sizeof(pthread_t));
 
-  for (int i = 1; i <= THREAD_COUNT; i++) {
+  for (int i = 1; i <= worker_thread_count; i++) {
     // printf("Thread #%d spawned\n", i);
     int id = i;
-    pthread_create(&consumer_threads[i - 1], NULL, service_request, (void *)&id);
+    thread_status = pthread_create(&consumer_threads[i - 1], NULL, service_request, (void *)&id);
+    if (thread_status != 0) {
+      printf("Failed with return code %i creating thread %i (%s).\n",
+         thread_status, i + 1, strerror(thread_status));
+      break;
+    }
   }
-  printf("%d worker threads initialized\n", THREAD_COUNT);
-  sleep(1000);
+  printf("%d worker threads initialized\n", worker_thread_count);
+  for (int i = 1; i <= worker_thread_count; i++) {
+    pthread_join(consumer_threads[i - 1], NULL);
+  }
   return 0;
 }
