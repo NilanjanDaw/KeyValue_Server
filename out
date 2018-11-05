@@ -1,0 +1,71 @@
+==24643== Memcheck, a memory error detector
+==24643== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==24643== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==24643== Command: ./client 127.0.0.1 8080 800 40
+==24643== Parent PID: 17187
+==24643== 
+==24643== 
+==24643== Process terminating with default action of signal 2 (SIGINT)
+==24643==    at 0x4C33EF8: strcmp (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==24643==    by 0x400AF5E: check_match (dl-lookup.c:121)
+==24643==    by 0x400AF5E: do_lookup_x (dl-lookup.c:406)
+==24643==    by 0x400B1EE: _dl_lookup_symbol_x (dl-lookup.c:813)
+==24643==    by 0x400CAF8: elf_machine_rela (dl-machine.h:308)
+==24643==    by 0x400CAF8: elf_dynamic_do_Rela (do-rel.h:137)
+==24643==    by 0x400CAF8: _dl_relocate_object (dl-reloc.c:258)
+==24643==    by 0x4004306: dl_main (rtld.c:2190)
+==24643==    by 0x401ADCF: _dl_sysdep_start (dl-sysdep.c:253)
+==24643==    by 0x4002127: _dl_start_final (rtld.c:414)
+==24643==    by 0x4002127: _dl_start (rtld.c:521)
+==24643==    by 0x4001097: ??? (in /lib/x86_64-linux-gnu/ld-2.27.so)
+==24643==    by 0x4: ???
+==24643==    by 0x1FFF0001CE: ???
+==24643==    by 0x1FFF0001D7: ???
+==24643==    by 0x1FFF0001E1: ???
+==24643== Jump to the invalid address stated on the next line
+==24643==    at 0x556: ???
+==24643==    by 0x4E446AF: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25)
+==24643==    by 0x400AF5E: check_match (dl-lookup.c:121)
+==24643==    by 0x400AF5E: do_lookup_x (dl-lookup.c:406)
+==24643==    by 0x400B1EE: _dl_lookup_symbol_x (dl-lookup.c:813)
+==24643==    by 0x400CAF8: elf_machine_rela (dl-machine.h:308)
+==24643==    by 0x400CAF8: elf_dynamic_do_Rela (do-rel.h:137)
+==24643==    by 0x400CAF8: _dl_relocate_object (dl-reloc.c:258)
+==24643==    by 0x4004306: dl_main (rtld.c:2190)
+==24643==    by 0x401ADCF: _dl_sysdep_start (dl-sysdep.c:253)
+==24643==    by 0x4002127: _dl_start_final (rtld.c:414)
+==24643==    by 0x4002127: _dl_start (rtld.c:521)
+==24643==    by 0x4001097: ??? (in /lib/x86_64-linux-gnu/ld-2.27.so)
+==24643==    by 0x4: ???
+==24643==    by 0x1FFF0001CE: ???
+==24643==    by 0x1FFF0001D7: ???
+==24643==  Address 0x556 is not stack'd, malloc'd or (recently) free'd
+==24643== 
+==24643== 
+==24643== Process terminating with default action of signal 11 (SIGSEGV)
+==24643==  Bad permissions for mapped region at address 0x556
+==24643==    at 0x556: ???
+==24643==    by 0x4E446AF: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25)
+==24643==    by 0x400AF5E: check_match (dl-lookup.c:121)
+==24643==    by 0x400AF5E: do_lookup_x (dl-lookup.c:406)
+==24643==    by 0x400B1EE: _dl_lookup_symbol_x (dl-lookup.c:813)
+==24643==    by 0x400CAF8: elf_machine_rela (dl-machine.h:308)
+==24643==    by 0x400CAF8: elf_dynamic_do_Rela (do-rel.h:137)
+==24643==    by 0x400CAF8: _dl_relocate_object (dl-reloc.c:258)
+==24643==    by 0x4004306: dl_main (rtld.c:2190)
+==24643==    by 0x401ADCF: _dl_sysdep_start (dl-sysdep.c:253)
+==24643==    by 0x4002127: _dl_start_final (rtld.c:414)
+==24643==    by 0x4002127: _dl_start (rtld.c:521)
+==24643==    by 0x4001097: ??? (in /lib/x86_64-linux-gnu/ld-2.27.so)
+==24643==    by 0x4: ???
+==24643==    by 0x1FFF0001CE: ???
+==24643==    by 0x1FFF0001D7: ???
+==24643== 
+==24643== HEAP SUMMARY:
+==24643==     in use at exit: 0 bytes in 0 blocks
+==24643==   total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+==24643== 
+==24643== All heap blocks were freed -- no leaks are possible
+==24643== 
+==24643== For counts of detected and suppressed errors, rerun with: -v
+==24643== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-05T02:37:42+05:30
+ * @Last modified time: 2018-11-05T20:41:37+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -134,7 +134,7 @@ int create_key(int key, char *value) {
 
 char* read_key(int key) {
   char* value = NULL;
-  if (hashtable.find(key) != hashtable.end()) {
+  if (hashtable.find(key) != hashtable.end() && hashtable.find(key)->second != NULL) {
     size_t length = strlen(hashtable.find(key)->second);
     value = (char*) malloc((length + 1) * sizeof(char));
     bzero(value, (length + 1));
@@ -317,6 +317,16 @@ int handle_request(int client_connection) {
       write_client(client_connection, "Error: Malformed Request");
     }
 
+      // if (*token != NULL) {
+      //   for (int i = 0; i <= 4; i++) {
+      //     if (token[i] != NULL) {
+      //       free(token[i]);
+      //       token[i] = NULL;
+      //     }
+      //   }
+      //   free(token);
+      //   token = NULL;
+      // }
     free_token(token);
   }
 }
