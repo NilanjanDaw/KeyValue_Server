@@ -23,7 +23,8 @@
 
 int disconnect_server(int *socket_file_descriptor);
 
-int port, n;
+int port_address, n;
+char *ip_address;
 int EXIT_FLAG = 0;
 
 void signal_handler(int signal) {
@@ -104,7 +105,7 @@ long int read_input(char **memory, int *status) {
   strcat(message, operators[index]);
   strcat(message, key_string);
   if (index == 0 || index == 2) {
-    char value[] = " 3312 askhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k mzmzdfdysfgidsfdkfsdnfsdfsudfeurbdsfaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehb ahsadbas dhasdkdb k";
+    char value[] = " 1001 askhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagd";
     strcat(message, value);
     // printf("%s %ld\n", message, strlen(message));
   }
@@ -138,30 +139,33 @@ int connect_server(char *address, int port, int *socket_file_descriptor) {
   return *socket_file_descriptor;
 }
 
-void write_server(char *buffer, int *socket_file_descriptor) {
+int write_server(char *buffer, int *socket_file_descriptor) {
 
   int response_read = 0;
   char *read_reply;
+  // printf("%ld\n", strlen(buffer));
   send_header(strlen(buffer), socket_file_descriptor);
   if (write(*socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket", socket_file_descriptor);
   char header[11];
 
   if ((response_read = read(*socket_file_descriptor, header, 11)) < 0) {
-    error_handler("unable to read from socket", socket_file_descriptor);
+    error_handler("unable to read from socket 153", socket_file_descriptor);
+    return response_read;
   }
   int packet_length = atoi(header) + 1;
   read_reply = (char *) malloc(packet_length * sizeof(char));
   bzero(read_reply, packet_length);
 
   if((response_read = read(*socket_file_descriptor, read_reply, packet_length)) < 0) {
-      error_handler("unable to read from socket", socket_file_descriptor);
+      error_handler("unable to read from socket 160", socket_file_descriptor);
   }
   else if (response_read > 0) {
     // printf("Server Reply: %s\n", read_reply);
   }
   free(read_reply);
   read_reply = NULL;
+  return response_read;
 }
 
 
@@ -183,20 +187,29 @@ void* generate_load(void* id) {
     }
 
     if (socket_file_descriptor == 0)
-      connect_server("127.0.0.1", 8080, &socket_file_descriptor);
-    else if (connection_status > 9000) {
+      connect_server(ip_address, port_address, &socket_file_descriptor);
+    else if (connection_status > 9600) {
       disconnect_server(&socket_file_descriptor);
       connection_status = 0;
       continue;
     } else {
       buffer_len = read_input(&buffer, &status);
-      if (buffer_len != 0)
-        // printf("%s\n", buffer);
-      if (socket_file_descriptor)
-        write_server(buffer, &socket_file_descriptor);
-      else
+      if (socket_file_descriptor && buffer_len != 0) {
+        int response_read = 0;
+        for (size_t i = 0; i < 4; i++) {
+          response_read = write_server(buffer, &socket_file_descriptor);
+          if (response_read < 0) {
+            disconnect_server(&socket_file_descriptor);
+            connection_status = 0;
+            socket_file_descriptor = 0;
+            break;
+          }
+        }
+      }
+      else {
         printf("Error: No active TCP connection\n");
-
+        connect_server(ip_address, port_address, &socket_file_descriptor);
+      }
       if (buffer != NULL) {
         free(buffer);
         buffer = NULL;
@@ -227,6 +240,8 @@ int main(int argc, char const *argv[]) {
 
   signal(SIGTERM, signal_handler);
   signal(SIGINT, signal_handler);
+  ip_address = (char *)argv[1];
+  port_address = atoi(argv[2]);
   int num_threads = atoi(argv[3]);
   int runtime = atoi(argv[4]);
   srand(SEED);
