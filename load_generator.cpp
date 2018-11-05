@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-05T20:38:41+05:30
+ * @Last modified time: 2018-11-06T01:25:07+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -181,7 +181,7 @@ void* generate_load(void* id) {
     // printf("EXIT_FLAG %d\n", EXIT_FLAG);
 
     if (EXIT_FLAG == 1) {
-      printf("timed out\n");
+      // printf("timed out\n");
       disconnect_server(&socket_file_descriptor);
       break;
     }
@@ -196,12 +196,14 @@ void* generate_load(void* id) {
       buffer_len = read_input(&buffer, &status);
       if (socket_file_descriptor && buffer_len != 0) {
         int response_read = 0;
-        response_read = write_server(buffer, &socket_file_descriptor);
-        if (response_read < 0) {
-          disconnect_server(&socket_file_descriptor);
-          connection_status = 0;
-          socket_file_descriptor = 0;
-          break;
+        for (size_t i = 0; i < 10; i++) {
+          response_read = write_server(buffer, &socket_file_descriptor);
+          if (response_read < 0) {
+            disconnect_server(&socket_file_descriptor);
+            connection_status = 0;
+            socket_file_descriptor = 0;
+            break;
+          }
         }
       }
       else {
