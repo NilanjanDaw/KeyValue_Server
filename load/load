@@ -61,3 +61,19 @@ mean response time: 98.836792 mean throughput 20121.859375
 done
 total request: 6109030 total_successful: 6103049
 mean response time: 97.733147 mean throughput 20343.496094
+====================== 300s 2600t =============================
+done
+total request: 5664820 total_successful: 5649423
+mean response time: 138.037155 mean throughput 18831.410156
+done
+total request: 6105373 total_successful: 6088269
+mean response time: 127.452827 mean throughput 20294.230469
+done
+total request: 6083136 total_successful: 6065543
+mean response time: 127.946709 mean throughput 20218.476562
+done
+total request: 6141857 total_successful: 6125896
+mean response time: 127.131668 mean throughput 20419.654297
+done
+total request: 6174906 total_successful: 6157809
+mean response time: 126.205803 mean throughput 20526.029297
