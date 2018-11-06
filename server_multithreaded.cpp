@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-05T20:41:37+05:30
+ * @Last modified time: 2018-11-07T01:56:53+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -52,10 +52,6 @@ void error_handler(const char *error_msg) {
 
 void signal_handler(int signal) {
 
-  if (signal == SIGPIPE) {
-    printf("SIGPIPE\n");
-  }
-
   if (signal == SIGINT || signal == SIGTERM) {
 
     for (int i = 0; i < QUEUE_SIZE; i++) {
@@ -80,8 +76,8 @@ void signal_handler(int signal) {
         free(iterate->second);
       }
     }
+    exit(EXIT_SUCCESS);
   }
-  exit(EXIT_SUCCESS);
 }
 
 int send_header(int length, int client_connection) {
@@ -134,11 +130,13 @@ int create_key(int key, char *value) {
 
 char* read_key(int key) {
   char* value = NULL;
-  if (hashtable.find(key) != hashtable.end() && hashtable.find(key)->second != NULL) {
-    size_t length = strlen(hashtable.find(key)->second);
+  map<int, char*>::iterator iter = hashtable.find(key);
+  if (iter != hashtable.end() && iter->second != NULL) {
+    size_t length = strlen(iter->second);
     value = (char*) malloc((length + 1) * sizeof(char));
     bzero(value, (length + 1));
-    strcpy(value, hashtable.find(key)->second);
+
+    strcpy(value, iter->second);
   }
   return value;
 }
@@ -230,7 +228,7 @@ char** read_client(int client_connection, int *n) {
 void free_token(char **token) {
 
   if (token != NULL) {
-    for (int i = 0; i <= 4; i++) {
+    for (int i = 0; i < 4; i++) {
       if (token[i] != NULL) {
         free(token[i]);
         token[i] = NULL;

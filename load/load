@@ -1,0 +1,63 @@
+====================== 300s 400t ===============================
+done
+total request: 1360322 total_successful: 1360196
+mean response time: 87.813950 mean throughput 4533.986816
+done
+total request: 1354386 total_successful: 1354023
+mean response time: 88.170357 mean throughput 4513.410156
+done
+total request: 1356964 total_successful: 1356821
+mean response time: 88.035645 mean throughput 4522.736816
+done
+total request: 1354370 total_successful: 1354094
+mean response time: 88.182655 mean throughput 4513.646484
+done
+total request: 1357502 total_successful: 1357205
+mean response time: 87.977051 mean throughput 4524.016602
+======================= 300s 1000t =============================
+done
+total request: 3369336 total_successful: 3367813
+mean response time: 88.578697 mean throughput 11226.042969
+done
+total request: 3346322 total_successful: 3344656
+mean response time: 89.233772 mean throughput 11148.853516
+done
+total request: 3358844 total_successful: 3357617
+mean response time: 88.877190 mean throughput 11192.056641
+done
+total request: 3357796 total_successful: 3356513
+mean response time: 88.899826 mean throughput 11188.376953
+done
+total request: 3354866 total_successful: 3353331
+mean response time: 88.954109 mean throughput 11177.769531
+====================== 300s 1600t =============================
+total request: 5118730 total_successful: 5114866
+mean response time: 93.299339 mean throughput 17049.552734
+done
+total request: 5115002 total_successful: 5111064
+mean response time: 93.343811 mean throughput 17036.880859
+done
+total request: 5156078 total_successful: 5152678
+mean response time: 92.603798 mean throughput 17175.593750
+done
+total request: 5143278 total_successful: 5139334
+mean response time: 92.807938 mean throughput 17131.113281
+done
+total request: 5109752 total_successful: 5106306
+mean response time: 93.436508 mean throughput 17021.019531
+====================== 300s 2000t =============================
+done
+total request: 5174608 total_successful: 5168633
+mean response time: 115.407295 mean throughput 17228.777344
+done
+total request: 6188917 total_successful: 6182035
+mean response time: 96.380219 mean throughput 20606.783203
+done
+total request: 6154752 total_successful: 6148766
+mean response time: 96.940887 mean throughput 20495.886719
+done
+total request: 6041942 total_successful: 6036558
+mean response time: 98.836792 mean throughput 20121.859375
+done
+total request: 6109030 total_successful: 6103049
+mean response time: 97.733147 mean throughput 20343.496094

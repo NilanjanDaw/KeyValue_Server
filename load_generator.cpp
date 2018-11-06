@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-06T01:25:07+05:30
+ * @Last modified time: 2018-11-06T19:47:56+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <math.h>
+#include <sys/time.h>
 
 #define MAX_NUM_TOKENS 4
 #define MAX_KEY 10000
@@ -26,6 +28,9 @@ int disconnect_server(int *socket_file_descriptor);
 int port_address, n;
 char *ip_address;
 int EXIT_FLAG = 0;
+
+unsigned long long total_requests = 0, total_successful = 0, total_execution_time = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void signal_handler(int signal) {
 
@@ -71,22 +76,18 @@ int disconnect_server(int *socket_file_descriptor) {
     write(*socket_file_descriptor, "exit00", 6);
     close(*socket_file_descriptor);
     *socket_file_descriptor = 0;
-    // printf("disconnect OK\n");
     return 0;
   } else {
-    printf("no active connection\n");
     return -1;
   }
 }
 
 
 void error_handler(const char *msg, int *socket_file_descriptor) {
-  perror(msg);
   if (*socket_file_descriptor != 0) {
     close(*socket_file_descriptor);
     *socket_file_descriptor = 0;
   }
-  // exit(1);
 }
 
 
@@ -95,8 +96,6 @@ long int read_input(char **memory, int *status) {
   char *buffer = NULL;
   size_t size = 0;
   int index = rand() % 4;
-  // index = 1;
-  // printf("%s\n", operators[index]);
   *status = index;
   char key_string[5];
   char message[5000] = {0};
@@ -107,35 +106,29 @@ long int read_input(char **memory, int *status) {
   if (index == 0 || index == 2) {
     char value[] = " 1001 askhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagdasyidadbasjdabsdajbdassd sdsdahsdajsdhasdhkasdansd,as ashdgayewehbaskhdasdasbdhagd";
     strcat(message, value);
-    // printf("%s %ld\n", message, strlen(message));
   }
   *memory = (char*)malloc((strlen(message) + 1) * sizeof(char));
   strcpy(*memory, message);
   return strlen(message);
-  // return strlen(buffer);
 }
 
 int connect_server(char *address, int port, int *socket_file_descriptor) {
   struct sockaddr_in server_address;
 
   if (*socket_file_descriptor > 0) {
-    printf("Active connection exists. Cannot connect\n");
     return -1;
   }
 
   if ((*socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     error_handler("unable to open socket", socket_file_descriptor);
-  // printf("Client socket initialised\n");
   bzero((char *)&server_address, sizeof(server_address));
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons(port);
 
   if (inet_pton(AF_INET, address, &server_address.sin_addr) <= 0)
     error_handler("unable to resolve host", socket_file_descriptor);
-  // printf("Server hostname resolved\n");
   if (connect(*socket_file_descriptor, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     error_handler("unable to connect to host server", socket_file_descriptor);
-  // printf("OK\n");
   return *socket_file_descriptor;
 }
 
@@ -143,7 +136,6 @@ int write_server(char *buffer, int *socket_file_descriptor) {
 
   int response_read = 0;
   char *read_reply;
-  // printf("%ld\n", strlen(buffer));
   send_header(strlen(buffer), socket_file_descriptor);
   if (write(*socket_file_descriptor, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket", socket_file_descriptor);
@@ -161,7 +153,6 @@ int write_server(char *buffer, int *socket_file_descriptor) {
       error_handler("unable to read from socket 160", socket_file_descriptor);
   }
   else if (response_read > 0) {
-    // printf("Server Reply: %s\n", read_reply);
   }
   free(read_reply);
   read_reply = NULL;
@@ -171,6 +162,8 @@ int write_server(char *buffer, int *socket_file_descriptor) {
 
 void* generate_load(void* id) {
 
+  unsigned long long per_thread_total_requests = 0, per_thread_total_successful = 0, per_thread_total_execution_time = 0;
+
   // printf("thread\n");
   int thread_id = *((int *)id);
   int connection_status = 0, socket_file_descriptor = 0;
@@ -178,38 +171,69 @@ void* generate_load(void* id) {
     char *buffer = NULL;
     long int buffer_len = 0;
     int status = 0;
-    // printf("EXIT_FLAG %d\n", EXIT_FLAG);
 
     if (EXIT_FLAG == 1) {
-      // printf("timed out\n");
       disconnect_server(&socket_file_descriptor);
+      pthread_mutex_lock(&mutex);
+      total_requests += per_thread_total_requests;
+      total_successful += per_thread_total_successful;
+      total_execution_time += per_thread_total_execution_time;
+      // printf("Thread %d total request: %llu total_successful: %llu\n", thread_id, per_thread_total_requests, per_thread_total_successful);
+      pthread_mutex_unlock(&mutex);
       break;
     }
+    per_thread_total_requests++;
+    if (socket_file_descriptor == 0) {
+      struct timespec start, end;
+      clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+      int status = connect_server(ip_address, port_address, &socket_file_descriptor);
+      if (status > 0) {
+        per_thread_total_successful++;
+      }
+      clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+      per_thread_total_execution_time += round(((end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000) / 1000);
 
-    if (socket_file_descriptor == 0)
-      connect_server(ip_address, port_address, &socket_file_descriptor);
-    else if (connection_status > 9600) {
-      disconnect_server(&socket_file_descriptor);
+    } else if (connection_status > 9600) {
+      struct timespec start, end;
+      clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+      int status = disconnect_server(&socket_file_descriptor);
+      if (status >= 0) {
+        per_thread_total_successful++;
+      }
+      clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+      per_thread_total_execution_time += round(((end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000) / 1000);
       connection_status = 0;
       continue;
+
     } else {
       buffer_len = read_input(&buffer, &status);
       if (socket_file_descriptor && buffer_len != 0) {
         int response_read = 0;
+        per_thread_total_requests--;
         for (size_t i = 0; i < 10; i++) {
+          per_thread_total_requests++;
+          struct timespec start, end;
+          clock_gettime(CLOCK_MONOTONIC_RAW, &start);
           response_read = write_server(buffer, &socket_file_descriptor);
+
           if (response_read < 0) {
             disconnect_server(&socket_file_descriptor);
             connection_status = 0;
             socket_file_descriptor = 0;
             break;
+          } else {
+            per_thread_total_successful++;
           }
+
+          clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+          per_thread_total_execution_time += round(((end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000) / 1000);
         }
       }
       else {
-        printf("Error: No active TCP connection\n");
+        // printf("Error: No active TCP connection\n");
         connect_server(ip_address, port_address, &socket_file_descriptor);
       }
+
       if (buffer != NULL) {
         free(buffer);
         buffer = NULL;
@@ -217,16 +241,6 @@ void* generate_load(void* id) {
 
     }
     connection_status = rand() % MAX_KEY;
-    // if (status) {
-    //   if (buffer != NULL) {
-    //     free(buffer);
-    //     buffer = NULL;
-    //   }
-    //   printf("Shutting Client\nDone\n");
-    //   break;
-    // }
-
-    // break;
   }
 }
 
@@ -258,5 +272,10 @@ int main(int argc, char const *argv[]) {
   for (int i = 1; i <= num_threads; i++) {
     pthread_join(consumer_threads[i - 1], NULL);
   }
+
+  printf("total request: %llu total_successful: %llu\n", total_requests, total_successful);
+  float mean_response_time = (float)total_execution_time / (float) total_requests;
+  float mean_throughput = (float) total_successful / (float) runtime;
+  printf("mean response time: %f mean throughput %f\n", mean_response_time, mean_throughput);
   return 0;
 }

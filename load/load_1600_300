@@ -1,0 +1,21 @@
+timeout
+timeout
+timeout
+timeout
+done
+total request: 5118730 total_successful: 5114866
+mean response time: 93.299339 mean throughput 17049.552734
+done
+total request: 5115002 total_successful: 5111064
+mean response time: 93.343811 mean throughput 17036.880859
+done
+total request: 5156078 total_successful: 5152678
+mean response time: 92.603798 mean throughput 17175.593750
+timeout
+done
+total request: 5143278 total_successful: 5139334
+mean response time: 92.807938 mean throughput 17131.113281
+timeout
+done
+total request: 5109752 total_successful: 5106306
+mean response time: 93.436508 mean throughput 17021.019531
