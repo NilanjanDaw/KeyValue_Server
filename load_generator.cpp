@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: client.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-06T19:47:56+05:30
+ * @Last modified time: 2018-11-07T05:09:16+05:30
  * @Copyright: Nilanjan Daw
  */
 #include <stdlib.h>
@@ -164,7 +164,6 @@ void* generate_load(void* id) {
 
   unsigned long long per_thread_total_requests = 0, per_thread_total_successful = 0, per_thread_total_execution_time = 0;
 
-  // printf("thread\n");
   int thread_id = *((int *)id);
   int connection_status = 0, socket_file_descriptor = 0;
   while (1) {
@@ -178,7 +177,6 @@ void* generate_load(void* id) {
       total_requests += per_thread_total_requests;
       total_successful += per_thread_total_successful;
       total_execution_time += per_thread_total_execution_time;
-      // printf("Thread %d total request: %llu total_successful: %llu\n", thread_id, per_thread_total_requests, per_thread_total_successful);
       pthread_mutex_unlock(&mutex);
       break;
     }
@@ -230,7 +228,6 @@ void* generate_load(void* id) {
         }
       }
       else {
-        // printf("Error: No active TCP connection\n");
         connect_server(ip_address, port_address, &socket_file_descriptor);
       }
 
@@ -261,7 +258,6 @@ int main(int argc, char const *argv[]) {
   srand(SEED);
   consumer_threads = (pthread_t*) malloc(num_threads * sizeof(pthread_t));
   for (int i = 1; i <= num_threads; i++) {
-    // printf("Thread #%d spawned\n", i);
     int id = i;
     pthread_create(&consumer_threads[i - 1], NULL, generate_load, (void *)&id);
   }

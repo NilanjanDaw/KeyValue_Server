@@ -4,7 +4,7 @@
  * @Email:  nilanjandaw@gmail.com
  * @Filename: server.c
  * @Last modified by:   nilanjan
- * @Last modified time: 2018-11-07T01:56:53+05:30
+ * @Last modified time: 2018-11-07T04:49:16+05:30
  * @Copyright: Nilanjan Daw
  */
 
@@ -47,7 +47,6 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void error_handler(const char *error_msg) {
   perror(error_msg);
-  // exit(1);
 }
 
 void signal_handler(int signal) {
@@ -95,7 +94,6 @@ void write_client(int client_connection, const char *buffer) {
   send_header(strlen(buffer), client_connection);
   if (write(client_connection, buffer, strlen(buffer)) < 0)
     error_handler("unable to write to socket");
-  // printf("done\n");
 }
 
 int insert(int new_client) {
@@ -217,7 +215,7 @@ char** read_client(int client_connection, int *n) {
   if ((current_read = read(client_connection, buffer, packet_length)) < 0) {
     error_handler("unable to read from socket 220");
   }
-  // printf("buffer %s\n", buffer);
+
   char **token = tokenize(buffer, strlen(buffer));
   if (buffer != NULL)
     free(buffer);
@@ -248,83 +246,64 @@ int handle_request(int client_connection) {
   while (1) {
     char **token = read_client(client_connection, &n);
 
-    // if (token != NULL)
-    //   printf("%s|%s|%s|%s\n", token[0], token[1], token[2], token[3]);
-
     if (token == NULL || strcmp(token[0], "exit00") == 0) {
 
       free_token(token);
       close(client_connection);
-      // printf("Client connection successfully terminated\n");
       break;
 
     } else if (strcmp(token[0], "create") == 0) {
-      // printf("create\n");
+
       long int buffer_len = strtol(token[2], NULL, 10);
       int key = atoi(token[1]);
       if (hashtable.find(key) == hashtable.end()) {
 
         create_key(key, token[3]);
-        // printf("created entry with length %ld\n", strlen(token[3]));
+
         write_client(client_connection, "OK");
 
       } else {
-        // printf("Error entry exists\n");
+
         write_client(client_connection, "Error entry exists");
       }
     } else if (strcmp(token[0], "read") == 0) {
-      // printf("read\n");
+
       int key = atoi(token[1]);
       char* value = read_key(key);
       if (value == NULL || strlen(value) == 0) {
-        // printf("No entry\n");
+
         write_client(client_connection, "Error no such entry");
       }
       else {
-        // printf("KV found for %d\n", key);
+
         write_client(client_connection, value);
         free(value);
       }
 
     } else if (strcmp(token[0], "delete") == 0) {
-      // printf("delete\n");
+
       int key = atoi(token[1]);
       if (hashtable.find(key) == hashtable.end()) {
-        // printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       }
       else {
 
         delete_key(key);
-        // printf("OK\n");
         write_client(client_connection, "OK");
       }
 
     } else if (strcmp(token[0], "update") == 0) {
-      // printf("update\n");
       int key = atoi(token[1]);
       if (hashtable.find(key) == hashtable.end()) {
-        // printf("No entry\n");
         write_client(client_connection, "Error no such entry");
       } else {
         update_key(key, token[3]);
-        // printf("OK\n");
         write_client(client_connection, "OK");
       }
     } else {
       write_client(client_connection, "Error: Malformed Request");
     }
 
-      // if (*token != NULL) {
-      //   for (int i = 0; i <= 4; i++) {
-      //     if (token[i] != NULL) {
-      //       free(token[i]);
-      //       token[i] = NULL;
-      //     }
-      //   }
-      //   free(token);
-      //   token = NULL;
-      // }
     free_token(token);
   }
 }
@@ -349,21 +328,18 @@ void *master(void *data) {
   if (bind(socket_file_descriptor, (struct sockaddr *) &address, sizeof(address)) < 0)
     error_handler("unable to bind to port");
 
-  // printf("Server socket bound to port %d\n", port);
   if (listen(socket_file_descriptor, BACKLOG_QUEUE) < 0)
     error_handler("unable to listen to given port");
   printf("Server started listening on port %d\n", port);
 
   while(1) {
 
-    // printf("Master Waiting for client connections\n");
     socklen_t cli_addr_size = sizeof(client_address);
     int new_connection = accept(socket_file_descriptor, (struct sockaddr *) &client_address,
                                     &cli_addr_size);
 
     if (new_connection < 0)
       error_handler("unable to accept client connection");
-    // printf("New client connection\n");
     pthread_mutex_lock(&mutex);
 
     while (current_queue_element_count == QUEUE_SIZE) {
@@ -386,7 +362,6 @@ void* service_request(void* id) {
     pthread_mutex_lock(&mutex);
 
     while (current_queue_element_count <= 0) {
-      // printf("Buffer empty. Thread %d sleeping.\n", thread_id);
       pthread_cond_wait(&retriever, &mutex);
     }
 
@@ -419,7 +394,6 @@ int main(int argc, char *argv[]) {
   consumer_threads = (pthread_t*) malloc(worker_thread_count * sizeof(pthread_t));
 
   for (int i = 1; i <= worker_thread_count; i++) {
-    // printf("Thread #%d spawned\n", i);
     int id = i;
     thread_status = pthread_create(&consumer_threads[i - 1], NULL, service_request, (void *)&id);
     if (thread_status != 0) {
